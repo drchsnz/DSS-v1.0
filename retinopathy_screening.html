@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Include PDF.js for rendering PDFs to Canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         @media print {
@@ -152,11 +153,11 @@
         <div id="edit-banner" class="hidden bg-yellow-100 text-yellow-800 px-4 py-2 rounded shadow font-bold text-sm border border-yellow-300 flex items-center">
             <i class="fas fa-edit mr-2"></i> EDIT MODE
         </div>
-        <button onclick="saveForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold text-sm shadow-lg flex items-center">
-            <span id="save-btn-text">Save & Print</span>
+        <button id="btn-save" onclick="saveForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold text-sm shadow-lg flex items-center transition cursor-pointer">
+            <i class="fas fa-print mr-2"></i> <span id="save-btn-text">Save & Print</span>
         </button>
-        <button onclick="resetForm()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold text-sm shadow-lg">
-            New / Reset
+        <button onclick="resetForm()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold text-sm shadow-lg transition cursor-pointer">
+            New / Clear
         </button>
     </div>
 
@@ -263,8 +264,9 @@
                                 <label class="flex items-center"><input type="checkbox" id="risk_kidney" class="mr-2"> Diabetic Kidney Disease</label>
                                 <label class="flex items-center"><input type="checkbox" id="risk_fatty" class="mr-2"> NAFLD (Fatty Liver)</label>
                                 <label class="flex items-center"><input type="checkbox" id="risk_smoke" class="mr-2"> Smoker</label>
-                                <label class="flex items-center"><input type="checkbox" class="mr-2"> Pregnancy</label>
-                                <label class="flex items-center text-red-700 font-medium" title="Risk for transient worsening of retinopathy"><input type="checkbox" class="mr-2"> Rapid HbA1c Reduction</label>
+                                <!-- IDs Added here -->
+                                <label class="flex items-center"><input type="checkbox" id="risk_preg" class="mr-2"> Pregnancy</label>
+                                <label class="flex items-center text-red-700 font-medium" title="Risk for transient worsening of retinopathy"><input type="checkbox" id="risk_rapid_hba1c" class="mr-2"> Rapid HbA1c Reduction</label>
                             </div>
                         </div>
                     </div>
@@ -535,7 +537,7 @@
 
             <!-- Action Buttons -->
             <div class="no-print mt-8 flex justify-end space-x-4">
-                <!-- Buttons are handled in the top bar for cleaner UI in this modular version, but keeping here for fallback -->
+                <!-- Buttons are handled in the top bar for cleaner UI -->
             </div>
 
         </form>
@@ -545,7 +547,7 @@
         const DB_KEY = 'dr_patients_v1';
         let currentEditId = null;
 
-        // --- 1. INITIALIZATION ---
+        // --- 1. INITIALIZATION & READ STATE ---
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             const pDate = document.getElementById('p_date');
@@ -557,6 +559,7 @@
             const editId = sessionStorage.getItem('edit_record_id');
             if(editId) {
                 currentEditId = parseInt(editId);
+                // Try pulling from memory if populated by dashboard, fallback to localStorage
                 const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
                 const record = db.find(r => r.id === currentEditId);
                 
@@ -584,21 +587,27 @@
             }
         });
 
-        // --- 2. SAVE FUNCTION (CRUD) ---
+        // --- 2. SAVE FUNCTION (CREATE / UPDATE to Google Sheets) ---
         function saveForm() {
             const nameEl = document.getElementById('p_name');
             const icEl = document.getElementById('p_ic');
             const dateEl = document.getElementById('p_date');
+            const btnSave = document.getElementById('btn-save');
 
             const name = nameEl ? nameEl.value.trim() : '';
             const ic = icEl ? icEl.value.trim() : '';
             const date = dateEl ? dateEl.value : '';
             
             if(!name) {
-                alert("Please enter Patient Name.");
+                alert("Please enter Patient Name before saving.");
                 if(nameEl) nameEl.focus();
                 return;
             }
+
+            // Visual feedback
+            const originalBtnHtml = btnSave.innerHTML;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            btnSave.disabled = true;
 
             // Capture Full State
             const formData = {};
@@ -608,7 +617,6 @@
                 else formData[el.id] = el.value;
             });
             // Radios (By Name)
-            // Explicit list of radio group names to capture
             ['method', 'dr_stage_od', 'mac_od', 'dr_stage_os', 'mac_os', 'follow_up', 'action'].forEach(name => {
                 const checked = document.querySelector(`input[name="${name}"]:checked`);
                 if(checked) formData[name] = checked.value;
@@ -635,40 +643,64 @@
                 data: formData
             };
 
-            // Save to LocalStorage
+            // 1. Fallback save to LocalStorage (Immediate UI response)
             try {
                 const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-                
                 if(currentEditId) {
-                    // Update
                     const index = db.findIndex(r => r.id === currentEditId);
                     if(index !== -1) db[index] = record;
                     else db.push(record);
                 } else {
-                    // Insert
                     db.unshift(record);
                 }
-                
                 localStorage.setItem(DB_KEY, JSON.stringify(db));
-                
-                // --- UPDATE TITLE FOR PDF FILENAME ---
-                const originalTitle = document.title;
-                // Sanitize filename (replace invalid chars like / with -)
-                const safeName = name.replace(/[\/\\:*?"<>|]/g, '_');
-                const safeIc = ic.replace(/[\/\\:*?"<>|]/g, '-');
-                document.title = `DSS_DR Screening_${safeName}_${safeIc}`;
-
-                alert("Saved Successfully!");
-                window.print();
-
-                // Restore original title after print dialog closes (delay ensures print dialog captures new title)
-                setTimeout(() => {
-                    document.title = originalTitle;
-                }, 2000);
-
             } catch (e) {
-                alert("Error saving: " + e.message);
+                console.error("Local storage error:", e);
             }
+
+            // 2. Transmit to Google Sheets
+            if (typeof google !== 'undefined' && google.script) {
+                const runner = google.script.run
+                    .withSuccessHandler(function() {
+                        triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+                    })
+                    .withFailureHandler(function(error) {
+                        alert("Warning: Saved locally, but failed to sync to Cloud.\n\nError: " + error.message);
+                        triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+                    });
+
+                if (currentEditId) {
+                    runner.updateEyeAssessmentInSheet(record);
+                } else {
+                    runner.saveEyeAssessmentToSheet(record);
+                }
+            } else {
+                // Not in Apps Script environment (Local Testing)
+                triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+            }
+        }
+
+        function triggerPrintAndReset(name, ic, btnElement, originalHtml) {
+            // Restore button
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+
+            // --- UPDATE TITLE FOR PDF FILENAME ---
+            const originalTitle = document.title;
+            const safeName = name.replace(/[\/\\:*?"<>|]/g, '_');
+            const safeIc = ic.replace(/[\/\\:*?"<>|]/g, '-');
+            document.title = `DSS_DR Screening_${safeName}_${safeIc}`;
+
+            window.print();
+
+            // Restore state
+            setTimeout(() => {
+                document.title = originalTitle;
+                sessionStorage.removeItem('edit_record_id'); // Clear edit mode
+                currentEditId = null;
+                document.getElementById('edit-banner').classList.add('hidden');
+                document.getElementById('save-btn-text').innerText = "Save & Print";
+            }, 2000);
         }
 
         function resetForm() {

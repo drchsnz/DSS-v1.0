@@ -122,15 +122,26 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4 md:p-8 text-gray-800">
 
+    <!-- TOP ACTION BUTTONS -->
+    <div class="fixed top-4 right-4 gap-2 no-print flex z-50">
+        <div id="edit-banner" class="hidden bg-yellow-100 text-yellow-800 px-4 py-2 rounded shadow font-bold text-sm border border-yellow-300 flex items-center">
+            <i class="fas fa-edit mr-2"></i> EDIT MODE
+        </div>
+        <button id="btn-save" onclick="saveForm()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 font-bold text-sm shadow-lg flex items-center transition cursor-pointer">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <span id="save-btn-text">Save & Print</span>
+        </button>
+        <button onclick="resetForm()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 font-bold text-sm shadow-lg transition cursor-pointer">
+            New / Clear
+        </button>
+    </div>
+
     <div class="container-main max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
         
         <!-- HEADER -->
         <header class="bg-red-900 text-white p-6 print:p-4 section-header flex flex-col">
             <div class="flex justify-between items-start">
                 <div>
-                    <!-- Doc ID (Hidden on print request previously, removed completely now per user request, but placeholder if needed) -->
-                    <!-- <div class="text-[10px] opacity-75 print:block hidden mb-1 font-mono">DOC-ID: OPH-REF-2026-v2.1 (HL7-Compliant)</div> -->
-                    
                     <h1 class="text-2xl print:text-xl font-bold uppercase tracking-tight">
                         Referral to Ophthalmology<sup class="text-sm print:text-xs font-normal opacity-90 ml-0.5">1,2</sup>
                     </h1>
@@ -160,13 +171,12 @@
                 <div class="p-4 print:p-2 border rounded bg-gray-50">
                     <h3 class="font-bold text-blue-900 border-b border-gray-300 mb-2 print:mb-1 print:text-xs">Patient Identification (PID)</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 print:gap-y-1 text-sm print:text-xs">
-                        <!-- Single Name Field (Consolidated) -->
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Name:</span> <input type="text" id="pid-name" class="border-b border-gray-300 bg-transparent flex-1"></div>
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Nat. ID (IC):</span> <input type="text" id="pid-ic" class="border-b border-gray-300 bg-transparent flex-1"></div>
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">MRN:</span> <input type="text" id="pid-mrn" class="border-b border-gray-300 bg-transparent flex-1" placeholder="Record No."></div>
-                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">DOB:</span> <input type="date" class="border-b border-gray-300 bg-transparent flex-1"></div>
+                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">DOB:</span> <input type="date" id="pid-dob" class="border-b border-gray-300 bg-transparent flex-1"></div>
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Gender:</span> 
-                            <select class="border-b border-gray-300 bg-transparent flex-1 p-0">
+                            <select id="pid-gender" class="border-b border-gray-300 bg-transparent flex-1 p-0">
                                 <option value=""></option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
@@ -182,16 +192,16 @@
                 
                 <!-- Diabetes Info -->
                 <div class="grid grid-cols-3 gap-4 print:gap-2 mb-4 print:mb-1 text-sm print:text-xs">
-                    <div><label class="font-semibold block">Type of DM:</label> <input type="text" class="w-full border-b border-gray-300 p-1 print:p-0"></div>
-                    <div><label class="font-semibold block">Duration:</label> <input type="text" class="w-full border-b border-gray-300 p-1 print:p-0"></div>
+                    <div><label class="font-semibold block">Type of DM:</label> <input type="text" id="cs-dm-type" class="w-full border-b border-gray-300 p-1 print:p-0"></div>
+                    <div><label class="font-semibold block">Duration:</label> <input type="text" id="cs-dm-duration" class="w-full border-b border-gray-300 p-1 print:p-0"></div>
                     <div class="flex items-end gap-2">
                          <div class="flex-1">
                             <label class="font-semibold block">Latest HbA1c:</label> 
-                            <input type="text" class="w-full border-b border-gray-300 p-1 print:p-0">
+                            <input type="text" id="cs-hba1c" class="w-full border-b border-gray-300 p-1 print:p-0">
                         </div>
                         <div class="w-20">
                             <label class="font-semibold block text-[10px]">Date:</label> 
-                            <input type="date" class="w-full border-b border-gray-300 p-1 print:p-0 text-[10px]">
+                            <input type="date" id="cs-hba1c-date" class="w-full border-b border-gray-300 p-1 print:p-0 text-[10px]">
                         </div>
                     </div>
                 </div>
@@ -201,19 +211,19 @@
                     <div class="mb-4 print:mb-1">
                         <label class="font-semibold text-sm print:text-xs block mb-1 print:mb-0">Visual Acuity (VA):</label>
                         <div class="grid grid-cols-2 gap-4 print:gap-2 text-sm print:text-xs">
-                            <div class="flex items-center">OD: <input type="text" class="ml-2 border-b border-gray-300 w-full text-center"></div>
-                            <div class="flex items-center">OS: <input type="text" class="ml-2 border-b border-gray-300 w-full text-center"></div>
+                            <div class="flex items-center">OD: <input type="text" id="cs-va-od" class="ml-2 border-b border-gray-300 w-full text-center"></div>
+                            <div class="flex items-center">OS: <input type="text" id="cs-va-os" class="ml-2 border-b border-gray-300 w-full text-center"></div>
                         </div>
                     </div>
                     <div>
                          <label class="font-semibold text-sm print:text-xs block mb-1 print:mb-0">Current Meds / Allergies:</label>
                          <div class="flex items-center gap-2">
-                            <input type="text" class="w-full border-b border-gray-300 rounded-none p-1 print:p-0 text-sm print:text-xs" placeholder="List medications...">
-                            <label class="flex items-center text-[10px] whitespace-nowrap"><input type="checkbox" class="mr-1"> NKDA</label>
+                            <input type="text" id="cs-meds" class="w-full border-b border-gray-300 rounded-none p-1 print:p-0 text-sm print:text-xs" placeholder="List medications...">
+                            <label class="flex items-center text-[10px] whitespace-nowrap"><input type="checkbox" id="cs-nkda" class="mr-1"> NKDA</label>
                          </div>
                          <div class="mt-1">
                              <label class="font-semibold text-sm print:text-xs block">Relevant Co-morbidities:</label>
-                             <input type="text" class="w-full border-b border-gray-300 rounded-none p-1 print:p-0 text-sm print:text-xs">
+                             <input type="text" id="cs-comorb" class="w-full border-b border-gray-300 rounded-none p-1 print:p-0 text-sm print:text-xs">
                          </div>
                     </div>
                 </div>
@@ -223,14 +233,14 @@
             <section class="bg-red-50 p-4 print:p-2 rounded border border-red-200 avoid-break">
                 <div class="flex flex-col md:flex-row print:flex-row gap-6 print:gap-4">
                     
-                    <!-- LEFT: Urgency Checklist Cards (Styled per image_db1f1f.png) -->
+                    <!-- LEFT: Urgency Checklist Cards -->
                     <div class="flex-1">
                         <h2 class="text-lg print:text-base font-bold text-red-900 mb-3 print:mb-2">Reason for Referral (Urgency)</h2>
                         <div class="space-y-3 print:space-y-2 text-sm print:text-xs">
                             
                             <!-- IMMEDIATE (Red Border) -->
                             <div class="p-2 print:p-2 bg-white border-l-[6px] border-red-600 shadow-sm flex items-start gap-3">
-                                <input type="checkbox" class="mt-1 h-5 w-5 text-red-600 border-2 border-gray-400 rounded">
+                                <input type="checkbox" id="urg-immediate" class="mt-1 h-5 w-5 text-red-600 border-2 border-gray-400 rounded">
                                 <div>
                                     <span class="font-bold text-red-700 block text-sm uppercase">IMMEDIATE (Emergency)</span>
                                     <span class="text-gray-600 text-xs block leading-tight">Sudden severe visual loss, RD.</span>
@@ -239,7 +249,7 @@
 
                             <!-- WITHIN 1 WEEK (Orange Border) -->
                             <div class="p-2 print:p-2 bg-white border-l-[6px] border-orange-500 shadow-sm flex items-start gap-3">
-                                <input type="checkbox" class="mt-1 h-5 w-5 text-orange-500 border-2 border-gray-400 rounded">
+                                <input type="checkbox" id="urg-1week" class="mt-1 h-5 w-5 text-orange-500 border-2 border-gray-400 rounded">
                                 <div>
                                     <span class="font-bold text-orange-700 block text-sm uppercase">WITHIN 1 WEEK</span>
                                     <span class="text-gray-600 text-xs block leading-tight">New vessels, Vit haem, Maculopathy.</span>
@@ -248,7 +258,7 @@
 
                             <!-- WITHIN 4 WEEKS (Yellow Border) -->
                             <div class="p-2 print:p-2 bg-white border-l-[6px] border-yellow-500 shadow-sm flex items-start gap-3">
-                                <input type="checkbox" class="mt-1 h-5 w-5 text-yellow-500 border-2 border-gray-400 rounded">
+                                <input type="checkbox" id="urg-4weeks" class="mt-1 h-5 w-5 text-yellow-500 border-2 border-gray-400 rounded">
                                 <div>
                                     <span class="font-bold text-yellow-700 block text-sm uppercase">WITHIN 4 WEEKS</span>
                                     <span class="text-gray-600 text-xs block leading-tight">Severe NPDR, Worsening.</span>
@@ -257,7 +267,7 @@
 
                             <!-- ROUTINE (Blue Border) -->
                             <div class="p-2 print:p-2 bg-white border-l-[6px] border-blue-600 shadow-sm flex items-start gap-3">
-                                <input type="checkbox" class="mt-1 h-5 w-5 text-blue-600 border-2 border-gray-400 rounded">
+                                <input type="checkbox" id="urg-routine" class="mt-1 h-5 w-5 text-blue-600 border-2 border-gray-400 rounded">
                                 <div>
                                     <span class="font-bold text-blue-700 block text-sm uppercase">ROUTINE REFERRAL</span>
                                     <span class="text-gray-600 text-xs block leading-tight">Cataract, Ungradable, Refraction.</span>
@@ -266,7 +276,7 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT: Recommended Follow-up Schedule Table (Styled per image_db7990.png) -->
+                    <!-- RIGHT: Recommended Follow-up Schedule Table -->
                     <div class="w-full md:w-1/2 print:w-[50%]">
                         <h2 class="text-sm print:text-sm font-bold text-gray-800 mb-2 print:mb-2">Recommended Follow-up Schedule</h2>
                         <div class="overflow-hidden rounded border border-gray-200 bg-white shadow-sm">
@@ -323,7 +333,7 @@
             <!-- 4. REMARKS -->
             <section class="mt-4 print:mt-2 avoid-break">
                 <label class="block text-sm print:text-xs font-bold text-gray-700 mb-1 print:mb-0">Referral Remarks / Additional Notes:</label>
-                <textarea class="w-full border border-gray-300 rounded p-2 h-20 print:h-12 text-sm print:text-xs bg-transparent" placeholder="Optional notes..."></textarea>
+                <textarea id="remarks" class="w-full border border-gray-300 rounded p-2 h-20 print:h-12 text-sm print:text-xs bg-transparent" placeholder="Optional notes..."></textarea>
             </section>
 
             <!-- 5. REFER BY (Signature Block) - Bottom of Page 1 -->
@@ -332,7 +342,7 @@
                     <h3 class="font-bold text-blue-900 border-b border-gray-300 mb-2 print:mb-1 print:text-xs">Refer By (Provider Details)</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 print:gap-y-1 text-sm print:text-xs">
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Name:</span> 
-                            <select class="border-b border-gray-300 bg-transparent flex-1 p-0 appearance-none">
+                            <select id="prov-name" class="border-b border-gray-300 bg-transparent flex-1 p-0 appearance-none">
                                 <option value=""></option>
                                 <option value="MUHAMMAD AZIMAN BIN AHMAD">MUHAMMAD AZIMAN BIN AHMAD</option>
                                 <option value="NOOR HASNIAH BINTI MUSA">NOOR HASNIAH BINTI MUSA</option>
@@ -342,14 +352,14 @@
                             </select>
                         </div>
                         <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Designation:</span> 
-                            <select class="border-b border-gray-300 bg-transparent flex-1 p-0 appearance-none">
+                            <select id="prov-designation" class="border-b border-gray-300 bg-transparent flex-1 p-0 appearance-none">
                                 <option value=""></option>
                                 <option value="Diabetes Educator (DE)">Diabetes Educator (DE)</option>
-                                <option value="Assistante DE (ADE)">Assistante DE (ADE)</option>
+                                <option value="Assistant DE (ADE)">Assistant DE (ADE)</option>
                             </select>
                         </div>
-                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Provider ID:</span> <input type="text" class="border-b border-gray-300 bg-transparent flex-1" placeholder="MAB/ LJM No."></div>
-                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Date:</span> <input type="date" class="border-b border-gray-300 bg-transparent flex-1"></div>
+                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Provider ID:</span> <input type="text" id="prov-id" class="border-b border-gray-300 bg-transparent flex-1" placeholder="MAB/ LJM No."></div>
+                        <div class="flex items-center"><span class="font-semibold w-24 print:w-20">Date:</span> <input type="date" id="prov-date" class="border-b border-gray-300 bg-transparent flex-1"></div>
                         
                         <!-- SPACIOUS SIGNATURE BLOCK -->
                         <div class="col-span-1 md:col-span-2 mt-4">
@@ -439,56 +449,65 @@
                 </div>
             </section>
 
-            <!-- PRINT BUTTON -->
-            <div class="no-print mt-8 flex justify-end space-x-4">
-                <button type="button" onclick="window.print(); return false;" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow-lg flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Save and Print
-                </button>
-            </div>
-
         </form>
     </div>
     
     <!-- Script for Auto-fill and Print Sync -->
     <script>
+        const DB_KEY = 'dr_referrals_v1';
+        let currentEditId = null;
+
         document.addEventListener('DOMContentLoaded', function() {
             // PID Inputs (Source)
             const nameInput = document.getElementById('pid-name');
             const icInput = document.getElementById('pid-ic');
             const mrnInput = document.getElementById('pid-mrn');
+            const pDateInput = document.getElementById('prov-date');
+
+            // Initialize Date
+            const today = new Date().toISOString().split('T')[0];
+            if(pDateInput && !pDateInput.value) pDateInput.value = today;
             
             // Re-ID Inputs (Target - Page 2)
             const reIdName = document.getElementById('reid-name');
             const reIdIc = document.getElementById('reid-ic');
             const reIdMrn = document.getElementById('reid-mrn');
 
-            // Function to update Name
-            function updateReIdName() {
-                reIdName.value = nameInput.value;
-            }
-            
-            // Function to update IC
-            function updateReIdIc() {
-                reIdIc.value = icInput.value;
-            }
-
-            // Function to update MRN
-            function updateReIdMrn() {
-                reIdMrn.value = mrnInput.value;
-            }
+            // Sync Functions
+            const updateReIdName = () => { if(reIdName && nameInput) reIdName.value = nameInput.value; };
+            const updateReIdIc = () => { if(reIdIc && icInput) reIdIc.value = icInput.value; };
+            const updateReIdMrn = () => { if(reIdMrn && mrnInput) reIdMrn.value = mrnInput.value; };
             
             // Attach Event Listeners safely
-            if(nameInput && reIdName) {
-                nameInput.addEventListener('input', updateReIdName);
-            }
-            
-            if(icInput && reIdIc) {
-                icInput.addEventListener('input', updateReIdIc);
-            }
+            if(nameInput) nameInput.addEventListener('input', updateReIdName);
+            if(icInput) icInput.addEventListener('input', updateReIdIc);
+            if(mrnInput) mrnInput.addEventListener('input', updateReIdMrn);
 
-            if(mrnInput && reIdMrn) {
-                mrnInput.addEventListener('input', updateReIdMrn);
+            // CHECK FOR EDIT MODE
+            const editId = sessionStorage.getItem('edit_record_id');
+            if(editId) {
+                currentEditId = parseInt(editId);
+                const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                const record = db.find(r => r.id === currentEditId);
+                
+                if(record && record.data) {
+                    document.getElementById('edit-banner').classList.remove('hidden');
+                    document.getElementById('save-btn-text').innerText = "Update & Print";
+
+                    const formData = record.data;
+                    Object.keys(formData).forEach(key => {
+                        const el = document.getElementById(key);
+                        if(el) {
+                            if(el.type === 'checkbox') el.checked = formData[key];
+                            else el.value = formData[key];
+                        }
+                    });
+                    
+                    // Trigger ReID sync after population
+                    updateReIdName();
+                    updateReIdIc();
+                    updateReIdMrn();
+                }
             }
 
             // Sync inputs to attributes for Print to PDF
@@ -512,6 +531,120 @@
                 });
             };
         });
+
+        // --- SAVE FUNCTION ---
+        function saveForm() {
+            const nameEl = document.getElementById('pid-name');
+            const icEl = document.getElementById('pid-ic');
+            const dateEl = document.getElementById('prov-date');
+            const btnSave = document.getElementById('btn-save');
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const ic = icEl ? icEl.value.trim() : '';
+            const date = dateEl ? dateEl.value : '';
+            
+            if(!name) {
+                alert("Please enter Patient Name before saving.");
+                if(nameEl) nameEl.focus();
+                return;
+            }
+
+            // Visual feedback
+            const originalBtnHtml = btnSave.innerHTML;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+            btnSave.disabled = true;
+
+            // Capture Full State
+            const formData = {};
+            document.querySelectorAll('input[id], select[id], textarea[id]').forEach(el => {
+                // Ignore the Page 2 Re-ID fields for the database payload to save space
+                if(el.id.startsWith('reid-')) return; 
+
+                if(el.type === 'checkbox') formData[el.id] = el.checked;
+                else formData[el.id] = el.value;
+            });
+
+            // Determine Outcome/Urgency status for Dashboard
+            let outcome = 'Routine';
+            if (formData['urg-immediate']) outcome = 'Immediate';
+            else if (formData['urg-1week']) outcome = 'Urgent (1W)';
+            else if (formData['urg-4weeks']) outcome = 'Early (4W)';
+
+            const record = {
+                id: currentEditId || Date.now(),
+                name: name,
+                ic: ic || '-',
+                date: date,
+                outcome: outcome,
+                assessor: formData['prov-name'] || '-',
+                designation: formData['prov-designation'] || '-',
+                module: 'referral',
+                data: formData
+            };
+
+            // 1. Fallback save to LocalStorage
+            try {
+                const db = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                if(currentEditId) {
+                    const index = db.findIndex(r => r.id === currentEditId);
+                    if(index !== -1) db[index] = record;
+                    else db.push(record);
+                } else {
+                    db.unshift(record);
+                }
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+            } catch (e) {
+                console.error("Local storage error:", e);
+            }
+
+            // 2. Transmit to Google Sheets
+            if (typeof google !== 'undefined' && google.script) {
+                const runner = google.script.run
+                    .withSuccessHandler(function() {
+                        triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+                    })
+                    .withFailureHandler(function(error) {
+                        alert("Warning: Saved locally, but failed to sync to Cloud.\n\nError: " + error.message);
+                        triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+                    });
+
+                if (currentEditId) {
+                    runner.updateReferralInSheet(record);
+                } else {
+                    runner.saveReferralToSheet(record);
+                }
+            } else {
+                // Local Testing Fallback
+                triggerPrintAndReset(name, ic, btnSave, originalBtnHtml);
+            }
+        }
+
+        function triggerPrintAndReset(name, ic, btnElement, originalHtml) {
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+
+            const originalTitle = document.title;
+            const safeName = name.replace(/[\/\\:*?"<>|]/g, '_');
+            const safeIc = ic.replace(/[\/\\:*?"<>|]/g, '-');
+            document.title = `OPH_Referral_${safeName}_${safeIc}`;
+
+            window.print();
+
+            setTimeout(() => {
+                document.title = originalTitle;
+                sessionStorage.removeItem('edit_record_id');
+                currentEditId = null;
+                document.getElementById('edit-banner').classList.add('hidden');
+                document.getElementById('save-btn-text').innerText = "Save & Print";
+            }, 2000);
+        }
+
+        function resetForm() {
+            if(confirm("Clear form inputs?")) {
+                sessionStorage.removeItem('edit_record_id');
+                location.reload();
+            }
+        }
     </script>
 </body>
 </html>
