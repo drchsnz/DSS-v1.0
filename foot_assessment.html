@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetic Foot Assessment Form</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- FORM STYLES --- */
+        
+        /* Checkbox customization */
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: #2563eb;
+            width: 0.9rem;
+            height: 0.9rem;
+            margin-right: 0.25rem;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        /* --- Blink Animations for Risk Levels --- */
+        @keyframes blink-green { 0%, 100% { background-color: transparent; } 50% { background-color: #dcfce7; } }
+        @keyframes blink-yellow { 0%, 100% { background-color: transparent; } 50% { background-color: #fef9c3; } }
+        @keyframes blink-orange { 0%, 100% { background-color: transparent; } 50% { background-color: #ffedd5; } }
+        @keyframes blink-red { 0%, 100% { background-color: transparent; } 50% { background-color: #fee2e2; } }
+        @keyframes blink-darkred { 0%, 100% { background-color: transparent; } 50% { background-color: #fecaca; } }
+
+        .anim-green { animation: blink-green 1s infinite; border-radius: 4px; }
+        .anim-yellow { animation: blink-yellow 1s infinite; border-radius: 4px; }
+        .anim-orange { animation: blink-orange 1s infinite; border-radius: 4px; }
+        .anim-red { animation: blink-red 1s infinite; border-radius: 4px; }
+        .anim-darkred { animation: blink-darkred 1s infinite; border-radius: 4px; }
+
+        /* General Table Styling */
+        table.clinical-table th, table.clinical-table td {
+            border: 1px solid #9ca3af;
+            padding: 4px; 
+            text-align: center;
+            vertical-align: middle;
+        }
+        table.clinical-table th {
+            background-color: #f3f4f6;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #374151;
+        }
+        
+        .section-header {
+            background-color: #1e40af;
+            color: white;
+            padding: 3px 8px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            break-after: avoid;
+        }
+
+        .section-number {
+            background-color: white;
+            color: #1e40af;
+            border-radius: 50%;
+            width: 1.2rem;
+            height: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
+        .risk-row {
+            transition: background-color 0.2s;
+        }
+
+        /* PRINT SPECIFIC CSS */
+        @media print {
+            body {
+                background-color: white !important;
+                padding: 0 !important;
+            }
+
+            .no-print { display: none !important; }
+
+            /* Input Reset for Print */
+            input, select, textarea {
+                background-color: transparent !important;
+                border: none !important;
+                border-bottom: 1px solid #ccc !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                font-size: 9px !important;
+                height: auto !important;
+                line-height: normal;
+                appearance: none;
+                -webkit-appearance: none;
+            }
+            
+            /* Ensure checkboxes show in print */
+            input[type="checkbox"], input[type="radio"] {
+                -webkit-appearance: auto !important;
+                appearance: auto !important;
+                border: none !important;
+                width: auto !important;
+                height: auto !important;
+                display: inline-block;
+            }
+            input[type="checkbox"]:checked, input[type="radio"]:checked {
+                background-color: transparent !important;
+                box-shadow: none !important;
+            }
+
+            .page-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .print-tight-y { margin-top: 1px !important; margin-bottom: 1px !important; }
+            .print-p-0 { padding: 0 !important; }
+            .print-p-1 { padding: 1px !important; }
+            .print-gap-1 { gap: 0.2rem !important; }
+            
+            .section-header {
+                margin-top: 3px !important;
+                margin-bottom: 1px !important;
+                padding: 1px 4px !important;
+                font-size: 0.75rem !important;
+                background-color: #1e40af !important;
+                color: white !important; 
+                -webkit-print-color-adjust: exact;
+            }
+            
+            /* Compact heights for print */
+            .mb-2 { margin-bottom: 2px !important; }
+            table.clinical-table th, table.clinical-table td {
+                padding: 0px 2px !important; 
+                font-size: 8.5px !important;
+                height: 14px !important; 
+            }
+            
+            /* Risk Rows print clean up */
+            .risk-row {
+                padding: 1px !important;
+                border-bottom: 1px dashed #ccc !important;
+            }
+            .risk-title, .risk-desc { font-size: 8.5px !important; }
+            
+            .bg-blue-50, .bg-gray-50, .bg-yellow-50, .bg-red-50 {
+                background-color: transparent !important;
+                border: 1px solid #eee !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Action Bar -->
+    <div class="fixed top-4 right-4 z-50 no-print flex gap-2">
+        <div id="edit-badge" class="hidden bg-yellow-400 text-yellow-900 font-bold py-2 px-4 rounded shadow-lg flex items-center gap-2 text-sm mr-2">
+            <i class="fas fa-edit"></i> Editing Mode
+        </div>
+        <button id="btn-save" onclick="saveAndPrintWrapper()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow-lg flex items-center gap-2 transition cursor-pointer text-sm">
+            <i class="fas fa-print"></i>
+            Save & Print
+        </button>
+        <button onclick="clearForm()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded shadow-lg transition cursor-pointer text-sm">
+            Clear
+        </button>
+    </div>
+
+    <!-- Main Form Container -->
+    <div class="page-container max-w-5xl mx-auto bg-white shadow-2xl px-10 py-8 min-h-screen">
+        
+        <!-- HEADER (Compact) -->
+        <div class="border-b-4 border-blue-900 pb-1 mb-1 text-center">
+            <div class="flex justify-between items-end">
+                <div class="text-left">
+                    <h1 class="text-xl font-bold text-gray-900 leading-tight">DIABETIC FOOT ASSESSMENT FORM</h1>
+                    <p class="text-[10px] text-gray-600 font-bold tracking-wide uppercase">CliSQI 2025 Indicator 2c & MDES/MOH CPG Guidelines</p>
+                </div>
+                <div class="text-right">
+                    <div class="border border-gray-400 p-2 rounded bg-gray-50 print-p-1 text-left w-64">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] font-bold uppercase w-12">Name:</span>
+                            <input type="text" id="patientName" class="flex-1 font-bold text-sm bg-transparent border-b border-gray-400 focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold uppercase w-12">IC/MRN:</span>
+                            <input type="text" id="patientIC" class="flex-1 text-sm bg-transparent border-b border-gray-400 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 0. Patient Profile -->
+        <div class="bg-blue-50 p-2 rounded border border-blue-100 mb-2 print-tight-y text-xs">
+            <div class="flex flex-wrap items-center gap-4 justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="font-bold uppercase text-gray-700">Type of DM:</span>
+                    <label class="flex items-center cursor-pointer"><input type="radio" name="dm_type" value="t2dm" onclick="resetOther()"> T2DM</label>
+                    <label class="flex items-center cursor-pointer"><input type="radio" name="dm_type" value="t1dm" onclick="resetOther()"> T1DM</label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="dm_type" value="others" onclick="enableOther()"> Other:
+                        <input type="text" id="dm_other_text" class="border-b border-gray-400 bg-transparent w-24 h-4 text-xs disabled:opacity-50" disabled>
+                    </label>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold uppercase text-gray-700">Duration:</span>
+                    <input type="number" id="dm_duration" class="w-12 h-6 border border-gray-300 text-center font-bold text-xs" placeholder="0"> Years
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold uppercase text-gray-700">Date:</span>
+                    <input type="date" id="assessmentDate" class="border border-gray-300 px-1 py-0 h-6 text-xs bg-white">
+                </div>
+            </div>
+        </div>
+
+        <!-- 1. History (Compact) -->
+        <div class="section-header"><span class="section-number">1</span>HISTORY & RISK FACTORS</div>
+        <div class="grid grid-cols-2 gap-4 mb-1 print-gap-1">
+            <div class="border-r border-gray-300 pr-2">
+                <h3 class="font-bold text-xs text-gray-700 mb-1 border-b">Medical History</h3>
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                    <label class="flex items-center"><input type="checkbox" id="chk_pad"> PAD / Ischemia</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_renal"> Renal Failure</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_retino"> Retinopathy</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_hx_ulcer"> Prev. Ulcer/Amp</label>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-bold text-xs text-gray-700 mb-1 border-b">Symptoms</h3>
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                    <label class="flex items-center"><input type="checkbox" id="chk_numb"> Numbness</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_burn"> Burning Pain</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_claudication"> Claudication</label>
+                    <label class="flex items-center"><input type="checkbox" id="chk_rest_pain"> Rest Pain</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Definitions Block -->
+        <div class="text-[9px] text-gray-500 italic mb-2 border-l-2 border-gray-300 pl-2 bg-gray-50 p-1 rounded print-p-0 print-bg-transparent flex flex-wrap gap-x-3 leading-tight">
+            <span class="font-bold text-gray-600">Definitions:</span> 
+            <span><strong>Numbness:</strong> Loss sensation/pins & needles.</span>
+            <span><strong>Burning:</strong> Painful neuro/worse @ night.</span>
+            <span><strong>Claudication:</strong> Muscle pain walking/relieved by rest.</span>
+            <span><strong>Rest Pain:</strong> Cont. pain/worse elevation (Critical).</span>
+        </div>
+
+        <!-- 2. Dermatological -->
+        <div class="section-header"><span class="section-number">2</span>DERMATOLOGICAL & MUSCULOSKELETAL</div>
+        <table class="clinical-table w-full text-xs mb-2">
+            <thead>
+                <tr>
+                    <th class="w-1/4">Parameter</th>
+                    <th class="w-1/4">RIGHT FOOT</th>
+                    <th class="w-1/4">LEFT FOOT</th>
+                    <th class="w-1/4">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-left font-semibold">Skin / Nails</td>
+                    <td><select id="skin_r" class="w-full bg-transparent text-xs h-5"><option>Intact</option><option>Dry/Crack</option><option>Fungal</option></select></td>
+                    <td><select id="skin_l" class="w-full bg-transparent text-xs h-5"><option>Intact</option><option>Dry/Crack</option><option>Fungal</option></select></td>
+                    <td><input type="text" id="note_skin" class="w-full bg-transparent text-center h-5"></td>
+                </tr>
+                <tr>
+                    <td class="text-left font-semibold">Deformities</td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="def_r" value="absent"> No</label><label><input type="radio" name="def_r" value="present"> Yes</label></div>
+                    </td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="def_l" value="absent"> No</label><label><input type="radio" name="def_l" value="present"> Yes</label></div>
+                    </td>
+                    <td><input type="text" id="note_def" class="w-full bg-transparent text-center h-5"></td>
+                </tr>
+                <tr>
+                    <td class="text-left font-semibold">Callus / Corns</td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="callus_r" value="absent"> No</label><label><input type="radio" name="callus_r" value="present"> Yes</label></div>
+                    </td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="callus_l" value="absent"> No</label><label><input type="radio" name="callus_l" value="present"> Yes</label></div>
+                    </td>
+                    <td><input type="text" id="note_callus" class="w-full bg-transparent text-center h-5"></td>
+                </tr>
+                <tr class="bg-red-50">
+                    <td class="text-left font-bold text-red-700">Ulcers / Gangrene</td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="ulcer_r" value="no"> No</label><label><input type="radio" name="ulcer_r" value="yes"> Yes</label></div>
+                    </td>
+                    <td>
+                        <div class="flex justify-center gap-2"><label><input type="radio" name="ulcer_l" value="no"> No</label><label><input type="radio" name="ulcer_l" value="yes"> Yes</label></div>
+                    </td>
+                    <td><input type="text" id="note_ulcer" placeholder="Loc:" class="w-full bg-transparent text-center h-5 placeholder-gray-400"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 3. Neurological -->
+        <div class="section-header"><span class="section-number">3</span>NEUROLOGICAL (CliSQI Mandatory: 10g Mono + 1 Other)</div>
+        <table class="clinical-table w-full text-xs mb-2">
+            <thead>
+                <tr>
+                    <th class="w-1/3">Test</th>
+                    <th>RIGHT FOOT</th>
+                    <th>LEFT FOOT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Monofilament -->
+                <tr>
+                    <td class="text-left align-middle px-2">
+                        <span class="font-bold text-blue-900">10g Monofilament</span>
+                        <span class="block text-[9px] text-gray-500">Loss: Sensation absent at one or more sites</span>
+                    </td>
+                    <td class="align-middle">
+                        <div class="flex items-center justify-center gap-2">
+                            <input type="number" id="mono_r_val" placeholder="/10" class="w-10 text-center border-b border-gray-300 text-xs">
+                            <div class="flex flex-col items-start text-[10px]">
+                                <label><input type="radio" name="mono_r" value="sensed"> Intact</label>
+                                <label class="text-red-600"><input type="radio" name="mono_r" value="loss"> Loss</label>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="flex items-center justify-center gap-2">
+                            <input type="number" id="mono_l_val" placeholder="/10" class="w-10 text-center border-b border-gray-300 text-xs">
+                            <div class="flex flex-col items-start text-[10px]">
+                                <label><input type="radio" name="mono_l" value="sensed"> Intact</label>
+                                <label class="text-red-600"><input type="radio" name="mono_l" value="loss"> Loss</label>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <!-- Vibration -->
+                <tr>
+                    <td class="text-left align-middle px-2">
+                        <span class="font-bold text-blue-900">Vibration (128Hz)</span>
+                        <span class="block text-[9px] text-gray-500">Loss: Vibration not felt at hallux (Big Toe)</span>
+                    </td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="vib_r" value="sensed"> Intact</label><label class="text-red-600"><input type="radio" name="vib_r" value="loss"> Loss</label></div></td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="vib_l" value="sensed"> Intact</label><label class="text-red-600"><input type="radio" name="vib_l" value="loss"> Loss</label></div></td>
+                </tr>
+                <!-- Pin Prick -->
+                <tr>
+                    <td class="text-left align-middle px-2">
+                        <span class="font-bold text-blue-900">Pin Prick (Neurotip)</span>
+                        <span class="block text-[9px] text-gray-500">Abnormal: Cannot distinguish sharp vs dull</span>
+                    </td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="pin_r" value="normal"> Normal</label><label class="text-red-600"><input type="radio" name="pin_r" value="abnormal"> Abnormal</label></div></td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="pin_l" value="normal"> Normal</label><label class="text-red-600"><input type="radio" name="pin_l" value="abnormal"> Abnormal</label></div></td>
+                </tr>
+                <!-- Reflexes -->
+                <tr>
+                    <td class="text-left align-middle px-2">
+                        <span class="font-bold text-blue-900">Ankle Reflexes</span>
+                        <span class="block text-[9px] text-gray-500">Normal: Ankle jerk reflex is present</span>
+                    </td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="refl_r" value="present"> Present</label><label><input type="radio" name="refl_r" value="absent"> Absent</label></div></td>
+                    <td><div class="flex justify-center gap-3 text-[10px]"><label><input type="radio" name="refl_l" value="present"> Present</label><label><input type="radio" name="refl_l" value="absent"> Absent</label></div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 4. Vascular -->
+        <div class="section-header"><span class="section-number">4</span>VASCULAR</div>
+        <table class="clinical-table w-full text-xs mb-2">
+            <thead>
+                <tr>
+                    <th class="w-1/3">Pulse</th>
+                    <th>RIGHT FOOT</th>
+                    <th>LEFT FOOT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-left px-2 font-semibold">Dorsalis Pedis (DPA)</td>
+                    <td><div class="flex justify-center gap-2 text-[10px]"><label><input type="radio" name="dpa_r" value="palpable"> Palpable</label><label><input type="radio" name="dpa_r" value="weak"> Weak</label><label><input type="radio" name="dpa_r" value="absent"> Absent</label></div></td>
+                    <td><div class="flex justify-center gap-2 text-[10px]"><label><input type="radio" name="dpa_l" value="palpable"> Palpable</label><label><input type="radio" name="dpa_l" value="weak"> Weak</label><label><input type="radio" name="dpa_l" value="absent"> Absent</label></div></td>
+                </tr>
+                <tr>
+                    <td class="text-left px-2 font-semibold">Posterior Tibial (PTA)</td>
+                    <td><div class="flex justify-center gap-2 text-[10px]"><label><input type="radio" name="pta_r" value="palpable"> Palpable</label><label><input type="radio" name="pta_r" value="weak"> Weak</label><label><input type="radio" name="pta_r" value="absent"> Absent</label></div></td>
+                    <td><div class="flex justify-center gap-2 text-[10px]"><label><input type="radio" name="pta_l" value="palpable"> Palpable</label><label><input type="radio" name="pta_l" value="weak"> Weak</label><label><input type="radio" name="pta_l" value="absent"> Absent</label></div></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="flex gap-4 text-[10px] font-semibold mb-2 justify-center bg-gray-50 p-1 border border-dashed rounded print-p-1">
+            <span class="font-bold text-gray-500">SIGNS:</span>
+            <label class="flex items-center"><input type="checkbox" id="sign_cold"> Cold Feet</label>
+            <label class="flex items-center"><input type="checkbox" id="sign_hair"> Hair Loss</label>
+            <label class="flex items-center"><input type="checkbox" id="sign_shiny"> Shiny Skin</label>
+        </div>
+
+        <!-- 5. Risk Stratification (Highly Compressed) -->
+        <div class="section-header"><span class="section-number">5</span>RISK STRATIFICATION & TRIAGE</div>
+        <div class="border rounded text-xs mb-2">
+            <!-- Normal -->
+            <label id="lbl_risk_normal" class="risk-row flex items-center p-2 border-b hover:bg-green-50 cursor-pointer">
+                <input type="radio" name="risk_level" id="risk_normal"> 
+                <div class="ml-2 grid grid-cols-12 w-full items-center">
+                    <div class="col-span-2 font-bold text-green-700 risk-title">NORMAL</div>
+                    <div class="col-span-6 text-gray-600 text-[10px] risk-desc">No abnormalities found.</div>
+                    <div class="col-span-4 text-right text-[9px] italic text-blue-800">Review: Annually (Primary Care)</div>
+                </div>
+            </label>
+            <!-- Low -->
+            <label id="lbl_risk_low" class="risk-row flex items-center p-2 border-b hover:bg-yellow-50 cursor-pointer">
+                <input type="radio" name="risk_level" id="risk_low"> 
+                <div class="ml-2 grid grid-cols-12 w-full items-center">
+                    <div class="col-span-2 font-bold text-yellow-600 risk-title">LOW</div>
+                    <div class="col-span-6 text-gray-600 text-[10px] risk-desc">Callus alone (No neuropathy/PAD).</div>
+                    <div class="col-span-4 text-right text-[9px] italic text-blue-800">Review: Annually (Primary Care)</div>
+                </div>
+            </label>
+            <!-- Moderate -->
+            <label id="lbl_risk_mod" class="risk-row flex items-center p-2 border-b hover:bg-orange-50 cursor-pointer">
+                <input type="radio" name="risk_level" id="risk_mod"> 
+                <div class="ml-2 grid grid-cols-12 w-full items-center">
+                    <div class="col-span-2 font-bold text-orange-600 risk-title">MODERATE</div>
+                    <div class="col-span-6 text-gray-600 text-[10px] risk-desc">Deformity OR Neuropathy OR PAD.</div>
+                    <div class="col-span-4 text-right text-[9px] italic text-blue-800">Ref: Foot Protection (3mth)</div>
+                </div>
+            </label>
+            <!-- High -->
+            <label id="lbl_risk_high" class="risk-row flex items-center p-2 border-b hover:bg-red-50 cursor-pointer">
+                <input type="radio" name="risk_level" id="risk_high"> 
+                <div class="ml-2 grid grid-cols-12 w-full items-center">
+                    <div class="col-span-2 font-bold text-red-600 risk-title">HIGH</div>
+                    <div class="col-span-6 text-gray-600 text-[10px] risk-desc">Hx Ulcer/Amp OR (Neuro + Deformity/PAD) OR Renal.</div>
+                    <div class="col-span-4 text-right text-[9px] italic text-blue-800">Ref: Foot Protection (2wks)</div>
+                </div>
+            </label>
+            <!-- Active -->
+            <label id="lbl_risk_active" class="risk-row flex items-center p-2 hover:bg-red-100 cursor-pointer bg-red-50">
+                <input type="radio" name="risk_level" id="risk_active"> 
+                <div class="ml-2 grid grid-cols-12 w-full items-center">
+                    <div class="col-span-2 font-bold text-red-900 risk-title">ACTIVE</div>
+                    <div class="col-span-6 text-red-800 text-[10px] risk-desc">Ulcer, Infection, Critical Ischemia, Charcot.</div>
+                    <div class="col-span-4 text-right font-bold text-red-700 text-[9px]">Ref: MDT (Urgent &lt;24hrs)</div>
+                </div>
+            </label>
+        </div>
+
+        <!-- 6. Management -->
+        <div class="section-header"><span class="section-number">6</span>MANAGEMENT PLAN</div>
+        <div class="grid grid-cols-3 gap-2 text-xs mb-2">
+            <div class="border rounded p-2">
+                <h4 class="font-bold text-[10px] text-blue-800 mb-1 border-b">EDUCATION</h4>
+                <div class="flex flex-col gap-1 text-[10px]">
+                    <label class="flex items-center"><input type="checkbox" id="mgt_edu_daily"> Daily Inspection</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_edu_hyg"> Foot Hygiene</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_edu_nail"> Nail Care</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_edu_shoe"> Footwear Advice</label>
+                </div>
+            </div>
+            <div class="border rounded p-2">
+                <h4 class="font-bold text-[10px] text-blue-800 mb-1 border-b">ACTION</h4>
+                <div class="flex flex-col gap-1 text-[10px]">
+                    <label class="flex items-center"><input type="checkbox" id="mgt_act_callus"> Treated Callus/Corn</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_act_wound"> Wound Dressing</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_act_offload"> Off-loading</label>
+                </div>
+            </div>
+            <div class="border rounded p-2" id="referral-section">
+                <h4 class="font-bold text-[10px] text-blue-800 mb-1 border-b">REFERRAL</h4>
+                <div class="flex flex-col gap-1 text-[10px]">
+                    <label class="flex items-center"><input type="checkbox" id="mgt_ref_dr" class="referral-check"> Dr / Endo / Ortho</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_ref_pod" class="referral-check"> Podiatrist / FPT</label>
+                    <label class="flex items-center"><input type="checkbox" id="mgt_ref_wound" class="referral-check"> Wound Care / Diet</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signatures -->
+        <div class="border-t border-gray-400 pt-1 mt-2 grid grid-cols-2 gap-8 text-xs">
+            <div>
+                <label class="block font-bold text-[10px] uppercase mb-1">Assessed By:</label>
+                <select id="assessor_name" class="w-full border border-gray-300 h-8 px-2 mb-2 text-xs">
+                    <option value="" disabled selected>Select Name...</option>
+                    <option value="AZIMAN">MUHAMMAD AZIMAN BIN AHMAD</option>
+                    <option value="HASNIAH">NOOR HASNIAH BINTI MUSA</option>
+                    <option value="SURIATI">SURIATI BINTI EMBONG</option>
+                    <option value="NIK">NIK MOHD ZOOL FADLI BIN NIK JAFAR</option>
+                    <option value="YATI">NORHAYATI BINTI CHE MAT</option>
+                </select>
+                <div class="stamp-box border border-dashed border-gray-300 bg-white flex items-center justify-center text-gray-300 text-[10px] h-10">
+                    Stamp
+                </div>
+            </div>
+            <div class="flex flex-col justify-end">
+                <div class="flex items-center mb-2">
+                    <span class="w-20 font-bold text-[10px] uppercase">Designation:</span>
+                    <select id="assessor_designation" class="flex-1 border-b border-gray-400 bg-transparent text-xs h-6 focus:outline-none">
+                        <option value="" disabled selected>Select Designation...</option>
+                        <option value="Diabetes Educator (DE)">Diabetes Educator (DE)</option>
+                        <option value="Assistant Diabetes Educator (ADE)">Assistant DE (ADE)</option>
+                    </select>
+                </div>
+                <div class="flex items-center mb-4">
+                    <span class="w-20 font-bold text-[10px] uppercase">Date:</span>
+                    <input type="date" id="assessor_date" class="border-b border-gray-400 flex-1 text-xs">
+                </div>
+                <div class="text-[8px] text-gray-500 italic text-right">
+                    Ref: MoH CPG Diabetic Foot (2018), MDES Manual (2024), CliSQI (2025).
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-right text-[9px] text-gray-400 mt-2">© Endocrine Unit, Hospital SNZ | 2026 | Page 1 of 1</div>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        const DB_KEY = 'dfa_patients_v1';
+        let currentRecordId = sessionStorage.getItem('edit_record_id'); // READ State tracker
+
+        // --- Helper Functions ---
+        function enableOther() {
+            const el = document.getElementById('dm_other_text');
+            if(el) { el.disabled = false; el.focus(); }
+        }
+        function resetOther() {
+            const el = document.getElementById('dm_other_text');
+            if(el) { el.disabled = true; el.value = ''; }
+        }
+
+        function triggerBlink(riskId) {
+            document.querySelectorAll('[id^="lbl_risk_"]').forEach(l => {
+                l.classList.remove('anim-green', 'anim-yellow', 'anim-orange', 'anim-red', 'anim-darkred');
+            });
+            const map = { 'risk_normal': 'anim-green', 'risk_low': 'anim-yellow', 'risk_mod': 'anim-orange', 'risk_high': 'anim-red', 'risk_active': 'anim-darkred' };
+            const label = document.getElementById('lbl_' + riskId);
+            if (label) label.classList.add(map[riskId]);
+        }
+
+        // --- CRUD: READ Function ---
+        function loadExistingRecord() {
+            if (!currentRecordId) return; // Not an edit
+            
+            // Show editing badge
+            document.getElementById('edit-badge').classList.remove('hidden');
+
+            const existing = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+            const record = existing.find(r => r.id == currentRecordId);
+            
+            if (!record) return;
+
+            // Load top-level fields
+            document.getElementById('patientName').value = record.name || '';
+            document.getElementById('patientIC').value = record.ic || '';
+            if (record.date) document.getElementById('assessmentDate').value = record.date;
+
+            const d = record.data || {};
+
+            // Load Checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(el => {
+                if (el.id && d[el.id] !== undefined) el.checked = d[el.id];
+            });
+
+            // Load Radio Buttons
+            const radioNames = new Set();
+            document.querySelectorAll('input[type="radio"]').forEach(el => radioNames.add(el.name));
+            radioNames.forEach(name => {
+                if (d[name]) {
+                    const radioToSelect = document.querySelector(`input[name="${name}"][value="${d[name]}"]`);
+                    if (radioToSelect) radioToSelect.checked = true;
+                }
+            });
+
+            // Load Text, Select, Number inputs
+            document.querySelectorAll('input[type="text"], input[type="number"], select').forEach(el => {
+                if (el.id && d[el.id] !== undefined && el.id !== 'patientName' && el.id !== 'patientIC') {
+                    el.value = d[el.id];
+                }
+            });
+
+            // Re-trigger special behaviors
+            if (d.dm_type === 'others') enableOther();
+            
+            // Recalculate Risk to update UI highlights
+            calculateRisk();
+        }
+
+        // --- Risk Calculation Logic ---
+        function calculateRisk() {
+            const getChk = (id) => { const el = document.getElementById(id); return el ? el.checked : false; };
+            const getRad = (name, val) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value === val : false; };
+            const getAnyRad = (name, val) => [...document.querySelectorAll(`input[name="${name}"]`)].some(r => r.checked && r.value === val);
+
+            // Logic Flags
+            const activeUlcer = getAnyRad('ulcer_r','yes') || getAnyRad('ulcer_l','yes');
+            const restPain = getChk('chk_rest_pain');
+            
+            const hxUlcer = getChk('chk_hx_ulcer');
+            const renal = getChk('chk_renal');
+            
+            const deformity = getAnyRad('def_r','present') || getAnyRad('def_l','present');
+            const callus = getAnyRad('callus_r','present') || getAnyRad('callus_l','present');
+            
+            // Neuro
+            const neuro = getAnyRad('mono_r','loss') || getAnyRad('mono_l','loss') || 
+                          getAnyRad('vib_r','loss') || getAnyRad('vib_l','loss') ||
+                          getAnyRad('pin_r','abnormal') || getAnyRad('pin_l','abnormal') ||
+                          getAnyRad('refl_r','absent') || getAnyRad('refl_l','absent');
+            
+            // PAD
+            const padHx = getChk('chk_pad') || getChk('chk_claudication');
+            const noPulse = getAnyRad('dpa_r','absent') || getAnyRad('dpa_l','absent') || getAnyRad('pta_r','absent') || getAnyRad('pta_l','absent');
+            const isPAD = padHx || noPulse;
+
+            let risk = 'risk_normal';
+            if (activeUlcer || restPain) risk = 'risk_active';
+            else if (hxUlcer || renal || (neuro && (deformity || isPAD))) risk = 'risk_high';
+            else if (deformity || neuro || isPAD) risk = 'risk_mod';
+            else if (callus && !neuro && !isPAD) risk = 'risk_low';
+
+            const radio = document.getElementById(risk);
+            if(radio && !radio.checked) {
+                radio.checked = true;
+                triggerBlink(risk);
+            }
+        }
+
+        // --- Main Operations ---
+
+        function clearForm() {
+            if(!confirm("Clear current form inputs?")) return;
+            document.querySelectorAll('input:not([type="radio"]):not([type="checkbox"])').forEach(i => i.value = '');
+            document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(i => i.checked = false);
+            document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+            
+            // Reset dates
+            const dateInput = document.getElementById('assessmentDate');
+            if(dateInput) dateInput.valueAsDate = new Date();
+            const assessorDate = document.getElementById('assessor_date');
+            if(assessorDate) assessorDate.valueAsDate = new Date();
+            
+            // Reset Risk Animations
+            document.querySelectorAll('[id^="lbl_risk_"]').forEach(l => l.className = l.className.replace(/anim-\w+/g, ''));
+            
+            // Wipe edit state
+            sessionStorage.removeItem('edit_record_id');
+            currentRecordId = null;
+            document.getElementById('edit-badge').classList.add('hidden');
+        }
+
+        // --- CRUD: CREATE / UPDATE Function ---
+        function saveAndPrintWrapper() {
+            const nameEl = document.getElementById('patientName');
+            const name = nameEl.value.trim();
+            const ic = document.getElementById('patientIC').value.trim();
+            const date = document.getElementById('assessmentDate').value;
+            const btnSave = document.getElementById('btn-save');
+            
+            // Validation
+            if(!name) {
+                alert("Please enter patient name before saving.");
+                nameEl.focus();
+                return;
+            }
+
+            // Visual indication of saving
+            const originalBtnText = btnSave.innerHTML;
+            btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btnSave.disabled = true;
+
+            // --- Capture Data ---
+            const formData = {};
+            // Checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(el => {
+                if(el.id) formData[el.id] = el.checked;
+            });
+            // Radio Buttons
+            const radioNames = new Set();
+            document.querySelectorAll('input[type="radio"]').forEach(el => radioNames.add(el.name));
+            radioNames.forEach(name => {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                if(checked) formData[name] = checked.value;
+            });
+            // Text/Select/Date
+            document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], select').forEach(el => {
+                if(el.id) formData[el.id] = el.value;
+            });
+
+            // Determine Risk
+            let risk = "UNKNOWN";
+            const riskMap = {
+                'risk_normal': 'NORMAL',
+                'risk_low': 'LOW',
+                'risk_mod': 'MODERATE',
+                'risk_high': 'HIGH',
+                'risk_active': 'ACTIVE'
+            };
+            const checkedRisk = document.querySelector('input[name="risk_level"]:checked');
+            if(checkedRisk) risk = riskMap[checkedRisk.id] || "UNKNOWN";
+
+            // Identify if this is a Create or Update operation
+            const isEdit = !!currentRecordId;
+
+            // Create Record Object
+            const record = {
+                id: isEdit ? parseInt(currentRecordId) : Date.now(), // KEEP existing ID if Update
+                name: name,
+                ic: ic || '-',
+                date: date,
+                assessor: formData['assessor_name'] || '-',
+                risk: risk,
+                data: formData
+            };
+
+            // Save to LocalStorage (as a fallback/offline backup)
+            try {
+                let existing = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+                
+                if (isEdit) {
+                    // Update
+                    const recordIndex = existing.findIndex(r => r.id == currentRecordId);
+                    if (recordIndex > -1) {
+                        existing[recordIndex] = record;
+                    } else {
+                        existing.unshift(record);
+                    }
+                } else {
+                    // Create
+                    existing.unshift(record);
+                }
+                
+                localStorage.setItem(DB_KEY, JSON.stringify(existing));
+            } catch (e) {
+                console.error("Local storage error:", e);
+            }
+
+            // Save to Google Sheets via Apps Script
+            if (typeof google !== 'undefined' && google.script) {
+                const runner = google.script.run
+                    .withSuccessHandler(function() {
+                        triggerPrintAndReset(name, date, btnSave, originalBtnText);
+                    })
+                    .withFailureHandler(function(error) {
+                        alert("Warning: Saved locally, but failed to sync to Google Sheets.\n\nError: " + error.message);
+                        triggerPrintAndReset(name, date, btnSave, originalBtnText);
+                    });
+
+                // Choose backend function based on operation
+                if (isEdit) {
+                    // Requires backend support: updateFootAssessmentInSheet(record)
+                    // (Falls back to saving a new entry if the update function isn't set up yet)
+                    if (runner.updateFootAssessmentInSheet) {
+                        runner.updateFootAssessmentInSheet(record);
+                    } else {
+                        runner.saveFootAssessmentToSheet(record);
+                    }
+                } else {
+                    runner.saveFootAssessmentToSheet(record);
+                }
+            } else {
+                // Not running in Google Apps Script environment (e.g., local testing)
+                triggerPrintAndReset(name, date, btnSave, originalBtnText);
+            }
+        }
+
+        // --- Helper for handling the print flow post-save ---
+        function triggerPrintAndReset(name, date, btnElement, originalHtml) {
+            // Restore button
+            btnElement.innerHTML = originalHtml;
+            btnElement.disabled = false;
+
+            // Handle Print
+            const originalTitle = document.title;
+            const safeName = name.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
+            document.title = `DFA_${safeName}_${date}`;
+            window.print();
+            document.title = originalTitle;
+            
+            // Clean up edit state after save
+            sessionStorage.removeItem('edit_record_id');
+            currentRecordId = null;
+            document.getElementById('edit-badge').classList.add('hidden');
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if we need to load an existing record (READ logic)
+            loadExistingRecord();
+
+            // Init Dates if not loaded from a record
+            const today = new Date();
+            const dateInput = document.getElementById('assessmentDate');
+            if (dateInput && !dateInput.value) dateInput.valueAsDate = today;
+            const assessorDate = document.getElementById('assessor_date');
+            if (assessorDate && !assessorDate.value) assessorDate.valueAsDate = today;
+
+            // Attach Risk Listeners
+            document.querySelectorAll('input:not([name="risk_level"])').forEach(input => {
+                input.addEventListener('change', calculateRisk);
+            });
+            
+            // Stop animation override
+            document.querySelectorAll('input[name="risk_level"]').forEach(input => {
+                input.addEventListener('change', () => {
+                        document.querySelectorAll('[id^="lbl_risk_"]').forEach(l => l.className = l.className.replace(/anim-\w+/g, ''));
+                });
+            });
+        });
+    </script>
+</body>
+</html>

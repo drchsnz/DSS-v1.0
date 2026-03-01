@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Screening System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow: hidden; }
+        
+        .sidebar-link {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem;
+            color: #94a3b8; border-radius: 0.5rem; transition: all 0.2s; cursor: pointer;
+        }
+        .sidebar-link:hover, .sidebar-link.active { background-color: #1e293b; color: white; }
+        .sidebar-link.active { border-left: 3px solid #2563eb; }
+        
+        .stat-card {
+            background: white; border-radius: 0.8rem; padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .perf-card {
+            background: white; border-radius: 0.6rem; padding: 1rem;
+            border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        /* Risk Badge Styles */
+        .badge { padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .badge-normal { background-color: #dcfce7; color: #166534; }
+        .badge-low { background-color: #fef9c3; color: #854d0e; }
+        .badge-moderate { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+        .badge-high { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .badge-active { background-color: #7f1d1d; color: white; animation: pulse-red 2s infinite; }
+        .badge-default { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        @keyframes pulse-sync { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+        .sync-pulse { animation: pulse-sync 1.5s infinite; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        iframe { border: none; width: 100%; height: 100%; }
+        .modal-enter { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- WELCOME / LOGIN SCREEN -->
+    <div id="login-wrapper" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-[420px] modal-enter">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 mb-4 shadow-sm">
+                    <i class="fas fa-hospital-user text-4xl text-blue-600"></i>
+                </div>
+                <h2 class="text-2xl font-black text-slate-800 tracking-tight">Diabetes Screening System</h2>
+                <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Endocrine Unit / Diabetes Resource Centre</p>
+            </div>
+            
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Authenticated User</p>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg shadow-lg">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold text-slate-800 truncate" id="welcome-email">Connecting...</p>
+                        <p class="text-[10px] text-green-600 font-bold flex items-center gap-1"><i class="fas fa-lock text-[8px]"></i> End-to-End Encrypted</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button id="btn-enter" onclick="enterSystem()" class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 font-bold shadow-lg transition flex items-center justify-center gap-2">
+                    Enter Dashboard <i class="fas fa-chevron-right text-xs"></i>
+                </button>
+                <button onclick="forceLogout()" class="w-full bg-white border border-slate-200 text-slate-500 py-3 rounded-xl hover:bg-slate-50 font-bold transition text-sm">
+                    Switch Google Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-wrapper" class="flex h-full hidden">
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-slate-900 text-white flex flex-col flex-shrink-0 z-20 shadow-xl">
+            <div class="p-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-notes-medical text-2xl text-blue-500"></i>
+                    <div>
+                        <h1 class="font-black text-sm tracking-tighter">SCREENING SYSTEM</h1>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Endocrine Unit</p>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <div onclick="loadModule('home')" id="nav-home" class="sidebar-link active">
+                    <i class="fas fa-chart-line w-5 text-center"></i> <span class="text-sm font-semibold">Overview</span>
+                </div>
+                <div class="mt-8 mb-2 px-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Clinical Modules</div>
+                <div onclick="startNewModule('foot')" id="nav-foot" class="sidebar-link">
+                    <i class="fas fa-shoe-prints w-5 text-center"></i> <span class="text-sm font-semibold">Foot Assessment</span>
+                </div>
+                <div onclick="startNewModule('eye')" id="nav-eye" class="sidebar-link opacity-50 cursor-not-allowed">
+                    <i class="fas fa-eye w-5 text-center"></i> <span class="text-sm font-semibold">Retinopathy</span>
+                </div>
+                <div onclick="startNewModule('referral')" id="nav-referral" class="sidebar-link opacity-50 cursor-not-allowed">
+                    <i class="fas fa-file-medical-alt w-5 text-center"></i> <span class="text-sm font-semibold">Referral Letter</span>
+                </div>
+                <div class="mt-8 mb-2 px-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Data Management</div>
+                <div onclick="loadModule('records')" id="nav-records" class="sidebar-link">
+                    <i class="fas fa-folder-open w-5 text-center"></i> <span class="text-sm font-semibold">Patient Records</span>
+                </div>
+                <div onclick="forceLogout()" class="sidebar-link hover:bg-red-900/40 hover:text-red-400 mt-8 border-t border-slate-800 pt-4">
+                    <i class="fas fa-power-off w-5 text-center"></i> <span class="text-sm font-semibold">Logout</span>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-slate-800 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400"><i class="fas fa-user-md"></i></div>
+                    <div class="overflow-hidden"><p class="text-[10px] font-bold text-slate-300 truncate" id="sidebar-user-email">User Account</p><p class="text-[9px] text-green-500 font-black"><i class="fas fa-circle text-[6px] mr-1 mb-0.5"></i>SECURE</p></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <main class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden">
+            <header class="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
+                <div class="flex items-center gap-4">
+                   <h2 id="page-title" class="font-black text-slate-700 text-lg">Dashboard</h2>
+                   <div class="h-6 w-px bg-slate-200"></div>
+                   <div class="text-sm text-slate-400 font-bold" id="current-date"></div>
+                </div>
+
+                <!-- GLOBAL SEARCH -->
+                <div class="relative w-96 group">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                    <input type="text" id="global-search" onkeyup="handleGlobalSearch(this.value)" placeholder="Quick Search Name, IC or MRN..." class="w-full bg-slate-100 border-none rounded-full py-2.5 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+                </div>
+            </header>
+
+            <!-- 1. DASHBOARD HOME VIEW -->
+            <div id="view-home" class="flex-1 overflow-auto p-8 main-view">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card border-b-4 border-blue-500">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Foot Screens</p><h3 id="stat-foot-total" class="text-3xl font-black text-slate-800 mt-1">...</h3></div>
+                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><i class="fas fa-shoe-prints"></i></div>
+                        </div>
+                    </div>
+                    <div class="stat-card border-b-4 border-purple-500">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Eye Screens</p><h3 id="stat-eye-total" class="text-3xl font-black text-slate-800 mt-1">0</h3></div>
+                            <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-500"><i class="fas fa-eye"></i></div>
+                        </div>
+                    </div>
+                    <div class="stat-card border-b-4 border-emerald-500">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Referrals</p><h3 id="stat-referral-total" class="text-3xl font-black text-slate-800 mt-1">0</h3></div>
+                            <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><i class="fas fa-file-export"></i></div>
+                        </div>
+                    </div>
+                    <div class="stat-card border-b-4 border-slate-800">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</p><h3 id="stat-db-status" class="text-lg font-black text-green-600 mt-2 tracking-tighter uppercase">Cloud Linked</h3></div>
+                            <!-- Real-time Sync Pulse -->
+                            <div id="sync-indicator" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400"><i class="fas fa-cloud"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ASSESSOR MONTHLY PERFORMANCE -->
+                <div class="mb-10">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-medal text-amber-500"></i>
+                            <h3 class="font-black text-slate-700 uppercase text-xs tracking-widest">Assessor Performance Analytics</h3>
+                        </div>
+                        <!-- Month Picker -->
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+                            <i class="fas fa-calendar-alt text-slate-400 text-xs"></i>
+                            <select id="perf-month-filter" onchange="renderDashboardStats()" class="text-xs font-bold text-slate-600 border-none bg-transparent outline-none cursor-pointer">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4" id="perf-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b flex justify-between items-center bg-slate-50/50">
+                        <h3 class="font-black text-slate-700 text-xs uppercase tracking-widest">Recent Activity Stream</h3>
+                        <button onclick="updateDashboard()" class="bg-white border text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-blue-50 transition shadow-sm">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh Data
+                        </button>
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-400 uppercase text-[9px] font-black tracking-[0.15em]">
+                            <tr>
+                                <th class="px-6 py-4">Patient Name</th>
+                                <th class="px-6 py-4">IC / MRN</th>
+                                <th class="px-6 py-4 text-center">Module</th>
+                                <th class="px-6 py-4 text-center">Assessor</th>
+                                <th class="px-6 py-4 text-center">Outcome</th>
+                                <th class="px-6 py-4 text-right">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="combined-table-body" class="divide-y divide-slate-100">
+                            <!-- Loader -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. MODULE FRAME (Iframe) -->
+            <div id="view-module" class="flex-1 hidden bg-white main-view relative">
+                <iframe id="module-frame" src="" title="Clinical Module"></iframe>
+            </div>
+
+            <!-- 3. RECORDS MANAGEMENT VIEW -->
+            <div id="view-records" class="flex-1 hidden bg-slate-50 p-8 main-view overflow-auto">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-5 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                        <div>
+                           <h3 class="font-black text-slate-800 text-lg tracking-tighter">Clinical Patient Database</h3>
+                           <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Permanent Hospital Records</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="loadRecordsTable()" class="bg-slate-50 text-slate-600 border px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-100 transition"><i class="fas fa-database mr-2"></i>RELOAD CLOUD</button>
+                            <button onclick="toggleModal('modal-new', true)" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>NEW ASSESSMENT</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] font-black tracking-widest">
+                                <tr>
+                                    <th class="px-6 py-4">Assessment Date</th>
+                                    <th class="px-6 py-4">Patient Identity</th>
+                                    <th class="px-6 py-4">ID Number</th>
+                                    <th class="px-6 py-4 text-center">Module</th>
+                                    <th class="px-6 py-4">Assessor</th>
+                                    <th class="px-6 py-4">Outcome</th>
+                                    <th class="px-6 py-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-records-body" class="divide-y divide-slate-50">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: New Assessment -->
+    <div id="modal-new" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl w-[500px] modal-enter p-8 text-center border border-white/20">
+            <h3 class="text-xl font-black text-slate-800 mb-2 tracking-tighter">Initiate Assessment</h3>
+            <p class="text-xs text-slate-400 mb-8 font-bold uppercase tracking-widest">Select the Clinical Pathway</p>
+            <div class="grid grid-cols-3 gap-6">
+                <button onclick="startNewModule('foot')" class="flex flex-col items-center p-6 border-2 border-blue-50 hover:border-blue-500 hover:bg-blue-50 rounded-2xl transition group">
+                    <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-shoe-prints text-2xl"></i></div>
+                    <div class="text-xs font-black text-slate-700 uppercase tracking-widest">Foot</div>
+                </button>
+                <button onclick="startNewModule('eye')" class="flex flex-col items-center p-6 border-2 border-purple-50 hover:border-purple-500 hover:bg-purple-50 rounded-2xl transition group">
+                    <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-eye text-2xl"></i></div>
+                    <div class="text-xs font-black text-slate-700 uppercase tracking-widest">Eye</div>
+                </button>
+                <button onclick="startNewModule('referral')" class="flex flex-col items-center p-6 border-2 border-emerald-50 hover:border-emerald-500 hover:bg-emerald-50 rounded-2xl transition group">
+                    <div class="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mb-3 group-hover:scale-110 transition-transform"><i class="fas fa-file-medical text-2xl"></i></div>
+                    <div class="text-xs font-black text-slate-700 uppercase tracking-widest">Referral</div>
+                </button>
+            </div>
+            <button onclick="toggleModal('modal-new', false)" class="mt-8 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition">Discard & Close</button>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "<?= url ?>"; 
+        let globalData = { footData: [], eyeData: [], refData: [] };
+
+        // 1. ADD FULL NAME MAPPING
+        const ASSESSOR_NAMES = {
+            "AZIMAN": "MUHAMMAD AZIMAN BIN AHMAD",
+            "HASNIAH": "NOOR HASNIAH BINTI MUSA",
+            "SURIATI": "SURIATI BINTI EMBONG",
+            "NIK": "NIK MOHD ZOOL FADLI BIN NIK JAFAR",
+            "YATI": "NORHAYATI BINTI CHE MAT"
+        };
+
+        function getFullName(shortName) {
+            return ASSESSOR_NAMES[shortName] || shortName || "Unknown";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initMonthFilter();
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(function(email) {
+                    const e = email || "local_admin@hospital";
+                    document.getElementById('welcome-email').innerText = e;
+                    document.getElementById('sidebar-user-email').innerText = e;
+                }).getUserEmail();
+            } else {
+                document.getElementById('welcome-email').innerText = "Admin (Development Mode)";
+            }
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        });
+
+        // FIXED TIMEZONE BUG: Calculate local year and month to avoid UTC offset shifting the dates backwards
+        function initMonthFilter() {
+            const filter = document.getElementById('perf-month-filter');
+            const now = new Date();
+            for(let i=0; i<6; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                
+                // Get the local year and local month, padded to 2 digits (e.g. "2026-02")
+                const localYear = d.getFullYear();
+                const localMonth = String(d.getMonth() + 1).padStart(2, '0');
+                const val = localYear + '-' + localMonth; 
+                
+                const label = d.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
+                filter.innerHTML += '<option value="' + val + '">' + label + '</option>';
+            }
+        }
+
+        function enterSystem() {
+            document.getElementById('login-wrapper').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+            updateDashboard();
+        }
+
+        function forceLogout() {
+            if(confirm("Secure Logout: This will redirect you to Google Account Switcher.")) {
+                window.top.location.href = "https://accounts.google.com/Logout?continue=https://accounts.google.com/";
+            }
+        }
+
+        function handleGlobalSearch(q) {
+            if(!q) return;
+            loadModule('records');
+            document.querySelector('[onkeyup^="filterRecords"]').value = q;
+            filterRecords(q);
+        }
+
+        function startNewModule(module) {
+            sessionStorage.removeItem('edit_record_id');
+            toggleModal('modal-new', false);
+            loadModule(module);
+        }
+
+        function editRecord(id, rawModule) {
+            sessionStorage.setItem('edit_record_id', id);
+            loadModule(rawModule || 'foot');
+        }
+
+        function printQuickAction(id, rawModule) {
+            editRecord(id, rawModule);
+            setTimeout(() => {
+                alert("Record loaded. You may now click 'Save & Print' inside the form to re-generate the document.");
+            }, 1000);
+        }
+
+        function loadModule(module) {
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            if(document.getElementById('nav-'+module)) document.getElementById('nav-'+module).classList.add('active');
+            document.querySelectorAll('.main-view').forEach(el => el.classList.add('hidden'));
+            
+            if (module === 'home') {
+                document.getElementById('view-home').classList.remove('hidden');
+                document.getElementById('page-title').innerText = "Dashboard Overview";
+                updateDashboard();
+            } else if (module === 'records') {
+                document.getElementById('view-records').classList.remove('hidden');
+                document.getElementById('page-title').innerText = "Clinical Database";
+                loadRecordsTable();
+            } else {
+                document.getElementById('view-module').classList.remove('hidden');
+                if (module === 'foot') {
+                    document.getElementById('page-title').innerText = "Diabetic Foot Assessment";
+                    document.getElementById('module-frame').src = GAS_URL + "?page=foot_assessment";
+                } else if (module === 'eye') {
+                    document.getElementById('page-title').innerText = "Retinopathy Screening";
+                    document.getElementById('module-frame').src = GAS_URL + "?page=retinopathy_screening";
+                } else if (module === 'referral') {
+                    document.getElementById('page-title').innerText = "Referral Letter";
+                    document.getElementById('module-frame').src = GAS_URL + "?page=dr_referral";
+                }
+            }
+        }
+
+        function setSyncing(isSyncing) {
+            const ind = document.getElementById('sync-indicator');
+            if(isSyncing) {
+                ind.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
+                ind.classList.add('text-blue-500', 'sync-pulse');
+            } else {
+                ind.innerHTML = '<i class="fas fa-cloud"></i>';
+                ind.classList.remove('text-blue-500', 'sync-pulse');
+            }
+        }
+
+        function updateDashboard() {
+            setSyncing(true);
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(data => {
+                    globalData = data;
+                    setSyncing(false);
+                    renderDashboardStats();
+                }).getDashboardData();
+            }
+        }
+
+        function getRiskBadge(risk) {
+            const r = (risk || '').toUpperCase();
+            let cls = 'badge-normal';
+            if(r === 'LOW') cls = 'badge-low';
+            else if(r === 'MODERATE') cls = 'badge-moderate';
+            else if(r === 'HIGH') cls = 'badge-high';
+            else if(r === 'ACTIVE') cls = 'badge-active';
+            else if(r === 'DONE' || r === 'NORMAL' || r === 'GENERATED') cls = 'badge-normal';
+            else cls = 'badge-default';
+            return '<span class="badge ' + cls + '">' + (risk || 'Normal') + '</span>';
+        }
+
+        function renderDashboardStats() {
+            const footData = globalData.footData || [];
+            const eyeData = globalData.eyeData || [];
+            const refData = globalData.refData || [];
+            
+            localStorage.setItem('dfa_patients_v1', JSON.stringify(footData));
+            localStorage.setItem('dr_patients_v1', JSON.stringify(eyeData));
+            localStorage.setItem('dr_referrals_v1', JSON.stringify(refData));
+            
+            document.getElementById('stat-foot-total').innerText = footData.length;
+            document.getElementById('stat-eye-total').innerText = eyeData.length;
+            document.getElementById('stat-referral-total').innerText = refData.length;
+
+            const targetMonth = document.getElementById('perf-month-filter').value;
+            const perfCounts = {};
+            
+            // Tally Foot Screens
+            footData.forEach(d => {
+                if (d.date && d.date.startsWith(targetMonth)) {
+                    const role = d.designation || "Staff";
+                    const name = d.assessor || "Unknown";
+                    const key = name + '|' + role;
+                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    perfCounts[key].total += 1;
+                    perfCounts[key].foot += 1;
+                }
+            });
+            
+            // Tally Eye Screens
+            eyeData.forEach(d => {
+                if (d.date && d.date.startsWith(targetMonth)) {
+                    const role = d.designation || "Staff";
+                    const name = d.assessor || "Unknown";
+                    const key = name + '|' + role;
+                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    perfCounts[key].total += 1;
+                    perfCounts[key].eye += 1;
+                }
+            });
+
+            // Tally Referrals
+            refData.forEach(d => {
+                if (d.date && d.date.startsWith(targetMonth)) {
+                    const role = d.designation || "Staff";
+                    const name = d.assessor || "Unknown";
+                    const key = name + '|' + role;
+                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    perfCounts[key].total += 1;
+                    perfCounts[key].ref += 1;
+                }
+            });
+
+            const perfGrid = document.getElementById('perf-grid');
+            perfGrid.innerHTML = '';
+            const keys = Object.keys(perfCounts).sort((a,b) => perfCounts[b].total - perfCounts[a].total);
+            
+            if (keys.length === 0) {
+                perfGrid.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 bg-white rounded-xl border-2 border-dashed border-slate-200 font-bold uppercase text-[10px] tracking-widest">No activity data for this period</div>';
+            } else {
+                keys.forEach(key => {
+                    const parts = key.split('|');
+                    const name = parts[0] || "Unknown";
+                    const role = parts[1] || "Staff";
+                    const fullName = getFullName(name);
+                    
+                    perfGrid.innerHTML += '<div class="perf-card shadow-sm bg-white border-l-4 border-blue-500">' +
+                        '<div class="flex-1 overflow-hidden pr-2" title="' + fullName + '">' +
+                            '<p class="text-[9px] font-black text-slate-500 uppercase truncate mb-0.5">' + fullName + '</p>' +
+                            '<p class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mb-2">' + role + '</p>' +
+                            '<div class="flex flex-wrap gap-1.5">' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-blue-500">' + perfCounts[key].foot + '</span> FOOT</span>' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-purple-500">' + perfCounts[key].eye + '</span> EYE</span>' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-emerald-500">' + perfCounts[key].ref + '</span> REF</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="text-right flex flex-col items-end justify-center border-l border-slate-100 pl-3 py-1">' +
+                            '<span class="text-2xl font-black text-slate-800 leading-none">' + perfCounts[key].total + '</span>' +
+                            '<p class="text-[8px] text-slate-400 font-black uppercase mt-1">Total</p>' +
+                        '</div>' +
+                    '</div>';
+                });
+            }
+
+            const tbody = document.getElementById('combined-table-body');
+            tbody.innerHTML = '';
+            
+            // Combine all sets of data for the recent activity stream
+            let combinedActivity = [
+                ...footData.map(d => Object.assign({}, d, { moduleType: 'FOOT', moduleBadgeClass: 'text-blue-600 bg-blue-50', rawModule: 'foot', outcomeVal: d.risk })),
+                ...eyeData.map(d => Object.assign({}, d, { moduleType: 'EYE', moduleBadgeClass: 'text-purple-600 bg-purple-50', rawModule: 'eye', outcomeVal: d.grade || d.risk || 'Done' })),
+                ...refData.map(d => Object.assign({}, d, { moduleType: 'REF', moduleBadgeClass: 'text-emerald-600 bg-emerald-50', rawModule: 'referral', outcomeVal: d.outcome || 'Generated' }))
+            ];
+            
+            let sorted = combinedActivity.sort((a,b) => b.id - a.id).slice(0, 8);
+            
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-slate-300 italic">Database is empty.</td></tr>';
+            } else {
+                sorted.forEach(d => {
+                    const assessorName = getFullName(d.assessor);
+                    
+                    tbody.innerHTML += '<tr class="hover:bg-slate-50 transition-colors">' +
+                        '<td class="px-6 py-4 font-bold text-slate-700">' + d.name + '</td>' +
+                        '<td class="px-6 py-4 text-slate-500 font-mono text-xs">' + d.ic + '</td>' +
+                        '<td class="px-6 py-4 text-center"><span class="text-[9px] font-black ' + d.moduleBadgeClass + ' px-2 py-1 rounded">' + d.moduleType + '</span></td>' +
+                        '<td class="px-6 py-4 text-center text-[10px] font-semibold text-slate-600 max-w-[120px] truncate" title="' + assessorName + '">' + assessorName + '</td>' +
+                        '<td class="px-6 py-4 text-center">' + getRiskBadge(d.outcomeVal) + '</td>' +
+                        '<td class="px-6 py-4 text-right text-slate-400 font-bold text-[11px]">' + d.date + '</td>' +
+                    '</tr>';
+                });
+            }
+        }
+
+        let allRecords = [];
+        function loadRecordsTable() {
+            const tbody = document.getElementById('full-records-body');
+            tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>Syncing cloud registry...</td></tr>';
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(data => {
+                    globalData = data;
+                    const footData = data.footData || [];
+                    const eyeData = data.eyeData || [];
+                    const refData = data.refData || [];
+                    
+                    let combined = [
+                        ...footData.map(d => Object.assign({}, d, { moduleType: 'FOOT', moduleBadgeClass: 'text-blue-600 bg-blue-50', rawModule: 'foot', outcomeVal: d.risk })),
+                        ...eyeData.map(d => Object.assign({}, d, { moduleType: 'EYE', moduleBadgeClass: 'text-purple-600 bg-purple-50', rawModule: 'eye', outcomeVal: d.grade || d.risk || 'Done' })),
+                        ...refData.map(d => Object.assign({}, d, { moduleType: 'REF', moduleBadgeClass: 'text-emerald-600 bg-emerald-50', rawModule: 'referral', outcomeVal: d.outcome || 'Generated' }))
+                    ];
+                    
+                    allRecords = combined.sort((a,b) => b.id - a.id);
+                    renderRecordsTable(allRecords);
+                }).getDashboardData();
+            }
+        }
+
+        function renderRecordsTable(data) {
+            const tbody = document.getElementById('full-records-body');
+            tbody.innerHTML = '';
+            data.forEach(d => {
+                const assessorName = getFullName(d.assessor);
+                tbody.innerHTML += '<tr class="hover:bg-slate-50 border-b border-slate-50" id="row-' + d.id + '">' +
+                    '<td class="px-6 py-4 text-slate-400 font-bold text-xs">' + d.date + '</td>' +
+                    '<td class="px-6 py-4 font-black text-slate-700 uppercase tracking-tight">' + d.name + '</td>' +
+                    '<td class="px-6 py-4 text-slate-500 font-mono text-xs">' + d.ic + '</td>' +
+                    '<td class="px-6 py-4 text-center"><span class="text-[9px] font-black ' + d.moduleBadgeClass + ' px-2 py-1 rounded">' + d.moduleType + '</span></td>' +
+                    '<td class="px-6 py-4 text-[10px] font-semibold text-slate-600 truncate max-w-[120px]" title="' + assessorName + '">' + assessorName + '</td>' +
+                    '<td class="px-6 py-4">' + getRiskBadge(d.outcomeVal) + '</td>' +
+                    '<td class="px-6 py-4 text-center space-x-2 whitespace-nowrap">' +
+                        '<button onclick="printQuickAction(' + d.id + ', \'' + d.rawModule + '\')" title="Print Assessment" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white transition"><i class="fas fa-print text-xs"></i></button>' +
+                        '<button onclick="editRecord(' + d.id + ', \'' + d.rawModule + '\')" title="Edit Details" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-amber-500 hover:text-white transition"><i class="fas fa-pen text-xs"></i></button>' +
+                        '<button onclick="deleteRecord(' + d.id + ', \'' + d.rawModule + '\')" title="Delete Permanent" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 hover:bg-red-600 hover:text-white transition"><i class="fas fa-trash text-xs"></i></button>' +
+                    '</td>' +
+                '</tr>';
+            });
+        }
+
+        function filterRecords(query) {
+            const lowerQ = (query || "").toLowerCase();
+            renderRecordsTable(allRecords.filter(r => r.name.toLowerCase().includes(lowerQ) || r.ic.toLowerCase().includes(lowerQ)));
+        }
+
+        function deleteRecord(id, rawModule) {
+            if(!confirm("DANGER: This will permanently remove the record from the cloud. Proceed?")) return;
+            const row = document.getElementById('row-' + id);
+            if (row) row.style.opacity = '0.3';
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run.withSuccessHandler(() => { 
+                    allRecords = allRecords.filter(d => d.id !== id);
+                    renderRecordsTable(allRecords);
+                }).deleteRecordFromSheet(id);
+            }
+        }
+
+        function toggleModal(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+        }
+    </script>
+</body>
+</html>
