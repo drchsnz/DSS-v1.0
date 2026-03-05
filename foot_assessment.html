@@ -565,7 +565,7 @@
             document.getElementById('edit-badge').classList.remove('hidden');
 
             const existing = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
-            const record = existing.find(r => r.id == currentRecordId);
+            const record = existing.find(r => r.id === parseInt(currentRecordId));
             
             if (!record) return;
 
@@ -738,7 +738,7 @@
                 
                 if (isEdit) {
                     // Update
-                    const recordIndex = existing.findIndex(r => r.id == currentRecordId);
+                    const recordIndex = existing.findIndex(r => r.id === parseInt(currentRecordId));
                     if (recordIndex > -1) {
                         existing[recordIndex] = record;
                     } else {
@@ -767,8 +767,6 @@
 
                 // Choose backend function based on operation
                 if (isEdit) {
-                    // Requires backend support: updateFootAssessmentInSheet(record)
-                    // (Falls back to saving a new entry if the update function isn't set up yet)
                     if (runner.updateFootAssessmentInSheet) {
                         runner.updateFootAssessmentInSheet(record);
                     } else {

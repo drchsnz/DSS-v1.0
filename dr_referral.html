@@ -609,7 +609,11 @@
                     });
 
                 if (currentEditId) {
-                    runner.updateReferralInSheet(record);
+                    if (runner.updateReferralInSheet) {
+                        runner.updateReferralInSheet(record);
+                    } else {
+                        runner.saveReferralToSheet(record);
+                    }
                 } else {
                     runner.saveReferralToSheet(record);
                 }

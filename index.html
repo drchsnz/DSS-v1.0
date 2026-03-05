@@ -371,26 +371,12 @@
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Securing Session...';
                 btn.disabled = true;
                 
-                // 2. Automatically log the user out of all Google accounts using a target="_top" anchor tag
-                // This bypasses the iframe Sandbox restrictions in GAS web apps.
-                try {
-                    const redirectUrl = document.referrer || window.location.href;
-                    const a = document.createElement('a');
-                    a.target = '_top';
-                    a.href = "https://accounts.google.com/Logout?continue=" + encodeURIComponent(redirectUrl);
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Fallback: If the browser blocks the redirect completely, enter system directly after 2 seconds
-                    setTimeout(() => {
-                        enterSystem();
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                    }, 2000);
-                } catch(e) {
-                    // Immediate fallback if execution fails
+                // Enter the system directly without redirecting to Google
+                setTimeout(() => {
                     enterSystem();
-                }
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 600); // Slight delay for visual feedback
                 
             } else {
                 errorBox.classList.remove('hidden');
@@ -481,6 +467,18 @@
             }
         }
 
+        // Helper function for robust date comparison
+        function isSameMonth(dateString, targetYYYYMM) {
+            if(!dateString) return false;
+            try {
+                const d = new Date(dateString);
+                if(isNaN(d.getTime())) return false;
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}` === targetYYYYMM;
+            } catch(e) { return false; }
+        }
+
         function updateDashboard() {
             setSyncing(true);
             if (typeof google !== 'undefined' && google.script) {
@@ -536,7 +534,7 @@
             // --- FIX FOR SPLIT CARDS: Normalize the Name AND Role before grouping ---
             // Tally Foot Screens
             footData.forEach(d => {
-                if (d.date && d.date.startsWith(targetMonth)) {
+                if (isSameMonth(d.date, targetMonth)) {
                     const role = normalizeRole(d.designation);
                     const name = getFullName(d.assessor);
                     const key = name + '|' + role;
@@ -548,7 +546,7 @@
             
             // Tally Eye Screens
             eyeData.forEach(d => {
-                if (d.date && d.date.startsWith(targetMonth)) {
+                if (isSameMonth(d.date, targetMonth)) {
                     const role = normalizeRole(d.designation);
                     const name = getFullName(d.assessor);
                     const key = name + '|' + role;
@@ -560,7 +558,7 @@
 
             // Tally Referrals
             refData.forEach(d => {
-                if (d.date && d.date.startsWith(targetMonth)) {
+                if (isSameMonth(d.date, targetMonth)) {
                     const role = normalizeRole(d.designation);
                     const name = getFullName(d.assessor);
                     const key = name + '|' + role;

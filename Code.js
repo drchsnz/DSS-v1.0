@@ -1,3 +1,8 @@
+// ==========================================
+// GLOBAL SETTINGS
+// ==========================================
+const DB_SHEET_ID = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+
 /**
  * 1. ROUTING FUNCTION
  * Serves the HTML pages for the Diabetes Screening System.
@@ -30,10 +35,11 @@ function doGet(e) {
  */
 function saveFootAssessmentToSheet(record) {
   if (!record) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000); // Wait up to 10 seconds for concurrent processes
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet1');
     var d = record.data || {};
     
@@ -62,6 +68,8 @@ function saveFootAssessmentToSheet(record) {
   } catch (error) { 
     console.error("Save error (Foot): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -70,10 +78,11 @@ function saveFootAssessmentToSheet(record) {
  */
 function updateFootAssessmentInSheet(record) {
   if (!record || !record.id) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet1');
     var data = sheet.getDataRange().getValues();
     
@@ -83,7 +92,12 @@ function updateFootAssessmentInSheet(record) {
         rowIndex = i + 1; break;
       }
     }
-    if (rowIndex === -1) return saveFootAssessmentToSheet(record);
+    
+    // If not found, fall back to creating a new record
+    if (rowIndex === -1) {
+      lock.releaseLock();
+      return saveFootAssessmentToSheet(record);
+    }
     
     var d = record.data || {};
     var rowData = [
@@ -111,6 +125,8 @@ function updateFootAssessmentInSheet(record) {
   } catch (error) { 
     console.error("Update error (Foot): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -119,10 +135,11 @@ function updateFootAssessmentInSheet(record) {
  */
 function saveEyeAssessmentToSheet(record) {
   if (!record) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet2');
     var d = record.data || {};
     
@@ -142,6 +159,8 @@ function saveEyeAssessmentToSheet(record) {
   } catch (error) { 
     console.error("Save error (Eye): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -150,10 +169,11 @@ function saveEyeAssessmentToSheet(record) {
  */
 function updateEyeAssessmentInSheet(record) {
   if (!record || !record.id) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet2');
     var data = sheet.getDataRange().getValues();
     
@@ -163,7 +183,11 @@ function updateEyeAssessmentInSheet(record) {
         rowIndex = i + 1; break;
       }
     }
-    if (rowIndex === -1) return saveEyeAssessmentToSheet(record);
+    
+    if (rowIndex === -1) {
+      lock.releaseLock();
+      return saveEyeAssessmentToSheet(record);
+    }
     
     var d = record.data || {};
     var rowData = [
@@ -182,6 +206,8 @@ function updateEyeAssessmentInSheet(record) {
   } catch (error) { 
     console.error("Update error (Eye): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -190,10 +216,11 @@ function updateEyeAssessmentInSheet(record) {
  */
 function saveReferralToSheet(record) {
   if (!record) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet3');
     var d = record.data || {};
     
@@ -211,6 +238,8 @@ function saveReferralToSheet(record) {
   } catch (error) { 
     console.error("Save error (Referral): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -219,10 +248,11 @@ function saveReferralToSheet(record) {
  */
 function updateReferralInSheet(record) {
   if (!record || !record.id) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheet = ss.getSheetByName('Sheet3');
     var data = sheet.getDataRange().getValues();
     
@@ -232,7 +262,11 @@ function updateReferralInSheet(record) {
         rowIndex = i + 1; break;
       }
     }
-    if (rowIndex === -1) return saveReferralToSheet(record);
+    
+    if (rowIndex === -1) {
+      lock.releaseLock();
+      return saveReferralToSheet(record);
+    }
     
     var d = record.data || {};
     var rowData = [
@@ -249,6 +283,8 @@ function updateReferralInSheet(record) {
   } catch (error) { 
     console.error("Update error (Referral): " + error.toString());
     throw error; 
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -257,10 +293,11 @@ function updateReferralInSheet(record) {
  */
 function deleteRecordFromSheet(id) {
   if (!id) return false;
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
+  var lock = LockService.getScriptLock();
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    lock.waitLock(10000);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     var sheetsToSearch = ['Sheet1', 'Sheet2', 'Sheet3']; // Searches all 3 tables
     
     for (var s = 0; s < sheetsToSearch.length; s++) {
@@ -277,18 +314,21 @@ function deleteRecordFromSheet(id) {
       }
     }
     return false; // Record not found
-  } catch (error) { throw error; }
+  } catch (error) { 
+    throw error; 
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**
  * 9. DATABASE READ FUNCTION (FETCH DASHBOARD DATA)
  */
 function getDashboardData() {
-  var sheetId = '114g-cxXH3TG1e6qoDSBT2Fr9hKBJZkzJrZYFly8_MI4';
   var result = { footData: [], eyeData: [], refData: [] };
   
   try {
-    var ss = SpreadsheetApp.openById(sheetId);
+    var ss = SpreadsheetApp.openById(DB_SHEET_ID);
     
     // --- 9A. FETCH FOOT DATA (Sheet1) ---
     var footSheet = ss.getSheetByName('Sheet1');
