@@ -60,22 +60,33 @@
                 <p class="text-xs text-slate-500 mt-1 uppercase tracking-widest font-bold">Endocrine Unit / Diabetes Resource Centre</p>
             </div>
             
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-6">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Authenticated User</p>
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg shadow-lg">
-                        <i class="fas fa-user-shield"></i>
+            <!-- Login Form Block -->
+            <div id="login-form-container" class="mb-6">
+                <div id="login-error" class="hidden mb-4 text-xs font-bold text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl text-center flex items-center justify-center gap-2">
+                    <i class="fas fa-exclamation-triangle"></i> <span>Invalid credentials</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="login-user" placeholder="Enter username" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm">
+                        </div>
                     </div>
-                    <div class="overflow-hidden">
-                        <p class="text-sm font-bold text-slate-800 truncate" id="welcome-email">Connecting...</p>
-                        <p class="text-[10px] text-green-600 font-bold flex items-center gap-1"><i class="fas fa-lock text-[8px]"></i> End-to-End Encrypted</p>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Password</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="password" id="login-pass" placeholder="Enter password" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm" onkeypress="if(event.key === 'Enter') validateLogin()">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="space-y-3">
-                <button id="btn-enter" onclick="enterSystem()" class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 font-bold shadow-lg transition flex items-center justify-center gap-2">
-                    Enter Dashboard <i class="fas fa-chevron-right text-xs"></i>
+                <button id="btn-login" onclick="validateLogin()" class="w-full bg-blue-600 text-white py-4 rounded-xl hover:bg-blue-700 font-black shadow-lg transition flex items-center justify-center gap-2 text-sm uppercase tracking-wide">
+                    Secure Login <i class="fas fa-arrow-right"></i>
                 </button>
                 <button onclick="forceLogout()" class="w-full bg-white border border-slate-200 text-slate-500 py-3 rounded-xl hover:bg-slate-50 font-bold transition text-sm">
                     Switch Google Account
@@ -92,8 +103,8 @@
                 <div class="flex items-center gap-3">
                     <i class="fas fa-notes-medical text-2xl text-blue-500"></i>
                     <div>
-                        <h1 class="font-black text-sm tracking-tighter">SCREENING SYSTEM</h1>
-                        <p class="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Endocrine Unit</p>
+                        <h1 class="font-black text-sm tracking-tighter">DIABETES SCREENING SYSTEM</h1>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold tracking-widest">Endocrine Unit, HSNZ</p>
                     </div>
                 </div>
             </div>
@@ -105,10 +116,10 @@
                 <div onclick="startNewModule('foot')" id="nav-foot" class="sidebar-link">
                     <i class="fas fa-shoe-prints w-5 text-center"></i> <span class="text-sm font-semibold">Foot Assessment</span>
                 </div>
-                <div onclick="startNewModule('eye')" id="nav-eye" class="sidebar-link opacity-50 cursor-not-allowed">
+                <div onclick="startNewModule('eye')" id="nav-eye" class="sidebar-link">
                     <i class="fas fa-eye w-5 text-center"></i> <span class="text-sm font-semibold">Retinopathy</span>
                 </div>
-                <div onclick="startNewModule('referral')" id="nav-referral" class="sidebar-link opacity-50 cursor-not-allowed">
+                <div onclick="startNewModule('referral')" id="nav-referral" class="sidebar-link">
                     <i class="fas fa-file-medical-alt w-5 text-center"></i> <span class="text-sm font-semibold">Referral Letter</span>
                 </div>
                 <div class="mt-8 mb-2 px-2 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Data Management</div>
@@ -287,7 +298,7 @@
         const GAS_URL = "<?= url ?>"; 
         let globalData = { footData: [], eyeData: [], refData: [] };
 
-        // 1. ADD FULL NAME MAPPING
+        // ADD FULL NAME MAPPING
         const ASSESSOR_NAMES = {
             "AZIMAN": "MUHAMMAD AZIMAN BIN AHMAD",
             "HASNIAH": "NOOR HASNIAH BINTI MUSA",
@@ -299,35 +310,90 @@
         function getFullName(shortName) {
             return ASSESSOR_NAMES[shortName] || shortName || "Unknown";
         }
+        
+        // NORMALIZER FOR DESIGNATION (Fixes "Assistante" typo and maps to uniform role)
+        function normalizeRole(roleText) {
+            const role = (roleText || '').toUpperCase();
+            if (role.includes('ASSISTANT') || role.includes('ADE')) return 'Assistant DE (ADE)';
+            if (role.includes('EDUCATOR') || role.includes('DE')) return 'Diabetes Educator (DE)';
+            return roleText || 'Healthcare Staff';
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             initMonthFilter();
-            if (typeof google !== 'undefined' && google.script) {
-                google.script.run.withSuccessHandler(function(email) {
-                    const e = email || "local_admin@hospital";
-                    document.getElementById('welcome-email').innerText = e;
-                    document.getElementById('sidebar-user-email').innerText = e;
-                }).getUserEmail();
+            
+            // Check if returning from a forced Google Logout redirect
+            if (sessionStorage.getItem('local_admin_auth') === 'true') {
+                document.getElementById('sidebar-user-email').innerText = "admin (Local)";
+                enterSystem(); // Bypass login and load the app automatically
             } else {
-                document.getElementById('welcome-email').innerText = "Admin (Development Mode)";
+                // Not returned from logout, attempt to get Google User Email
+                if (typeof google !== 'undefined' && google.script) {
+                    google.script.run.withSuccessHandler(function(email) {
+                        const e = email || "local_admin@hospital";
+                        document.getElementById('sidebar-user-email').innerText = e;
+                    }).getUserEmail();
+                }
             }
+            
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         });
 
-        // FIXED TIMEZONE BUG: Calculate local year and month to avoid UTC offset shifting the dates backwards
+        // FIXED TIMEZONE BUG: Calculate local year and month
         function initMonthFilter() {
             const filter = document.getElementById('perf-month-filter');
             const now = new Date();
             for(let i=0; i<6; i++) {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                
-                // Get the local year and local month, padded to 2 digits (e.g. "2026-02")
                 const localYear = d.getFullYear();
                 const localMonth = String(d.getMonth() + 1).padStart(2, '0');
                 const val = localYear + '-' + localMonth; 
-                
                 const label = d.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' });
                 filter.innerHTML += '<option value="' + val + '">' + label + '</option>';
+            }
+        }
+
+        // VALIDATE LOGIN CREDENTIALS
+        function validateLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            const errorBox = document.getElementById('login-error');
+
+            if (user === 'admin' && pass === 'admin123') {
+                errorBox.classList.add('hidden');
+                
+                // 1. Set Session Storage so that when the app reloads, it skips the login screen
+                sessionStorage.setItem('local_admin_auth', 'true');
+                
+                // Show loading state to user
+                const btn = document.getElementById('btn-login');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Securing Session...';
+                btn.disabled = true;
+                
+                // 2. Automatically log the user out of all Google accounts using a target="_top" anchor tag
+                // This bypasses the iframe Sandbox restrictions in GAS web apps.
+                try {
+                    const redirectUrl = document.referrer || window.location.href;
+                    const a = document.createElement('a');
+                    a.target = '_top';
+                    a.href = "https://accounts.google.com/Logout?continue=" + encodeURIComponent(redirectUrl);
+                    document.body.appendChild(a);
+                    a.click();
+                    
+                    // Fallback: If the browser blocks the redirect completely, enter system directly after 2 seconds
+                    setTimeout(() => {
+                        enterSystem();
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+                } catch(e) {
+                    // Immediate fallback if execution fails
+                    enterSystem();
+                }
+                
+            } else {
+                errorBox.classList.remove('hidden');
             }
         }
 
@@ -338,8 +404,16 @@
         }
 
         function forceLogout() {
-            if(confirm("Secure Logout: This will redirect you to Google Account Switcher.")) {
-                window.top.location.href = "https://accounts.google.com/Logout?continue=https://accounts.google.com/";
+            if(confirm("Secure Logout: This will clear your session and redirect you to Google Account Switcher.")) {
+                sessionStorage.removeItem('local_admin_auth');
+                
+                // Use target="_top" anchor to bypass iframe restrictions
+                const redirectUrl = "https://accounts.google.com/";
+                const a = document.createElement('a');
+                a.target = '_top';
+                a.href = "https://accounts.google.com/Logout?continue=" + encodeURIComponent(redirectUrl);
+                document.body.appendChild(a);
+                a.click();
             }
         }
 
@@ -415,18 +489,31 @@
                     setSyncing(false);
                     renderDashboardStats();
                 }).getDashboardData();
+            } else {
+                // If local testing, mock resolving the sync
+                setSyncing(false);
+                renderDashboardStats();
             }
         }
 
         function getRiskBadge(risk) {
             const r = (risk || '').toUpperCase();
             let cls = 'badge-normal';
-            if(r === 'LOW') cls = 'badge-low';
-            else if(r === 'MODERATE') cls = 'badge-moderate';
-            else if(r === 'HIGH') cls = 'badge-high';
-            else if(r === 'ACTIVE') cls = 'badge-active';
-            else if(r === 'DONE' || r === 'NORMAL' || r === 'GENERATED') cls = 'badge-normal';
-            else cls = 'badge-default';
+            
+            if (r === 'LOW' || r === 'ROUTINE') {
+                cls = 'badge-low';
+            } else if (r === 'MODERATE' || r === 'EARLY (4W)') {
+                cls = 'badge-moderate';
+            } else if (r === 'HIGH' || r === 'REFERRAL' || r === 'URGENT (1W)') {
+                cls = 'badge-high';
+            } else if (r === 'ACTIVE' || r === 'IMMEDIATE') {
+                cls = 'badge-active';
+            } else if (r === 'DONE' || r === 'NORMAL' || r === 'GENERATED') {
+                cls = 'badge-normal';
+            } else {
+                cls = 'badge-default';
+            }
+            
             return '<span class="badge ' + cls + '">' + (risk || 'Normal') + '</span>';
         }
 
@@ -446,13 +533,14 @@
             const targetMonth = document.getElementById('perf-month-filter').value;
             const perfCounts = {};
             
+            // --- FIX FOR SPLIT CARDS: Normalize the Name AND Role before grouping ---
             // Tally Foot Screens
             footData.forEach(d => {
                 if (d.date && d.date.startsWith(targetMonth)) {
-                    const role = d.designation || "Staff";
-                    const name = d.assessor || "Unknown";
+                    const role = normalizeRole(d.designation);
+                    const name = getFullName(d.assessor);
                     const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
                     perfCounts[key].total += 1;
                     perfCounts[key].foot += 1;
                 }
@@ -461,10 +549,10 @@
             // Tally Eye Screens
             eyeData.forEach(d => {
                 if (d.date && d.date.startsWith(targetMonth)) {
-                    const role = d.designation || "Staff";
-                    const name = d.assessor || "Unknown";
+                    const role = normalizeRole(d.designation);
+                    const name = getFullName(d.assessor);
                     const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
                     perfCounts[key].total += 1;
                     perfCounts[key].eye += 1;
                 }
@@ -473,10 +561,10 @@
             // Tally Referrals
             refData.forEach(d => {
                 if (d.date && d.date.startsWith(targetMonth)) {
-                    const role = d.designation || "Staff";
-                    const name = d.assessor || "Unknown";
+                    const role = normalizeRole(d.designation);
+                    const name = getFullName(d.assessor);
                     const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { total: 0, foot: 0, eye: 0, ref: 0 };
+                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
                     perfCounts[key].total += 1;
                     perfCounts[key].ref += 1;
                 }
@@ -490,23 +578,20 @@
                 perfGrid.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 bg-white rounded-xl border-2 border-dashed border-slate-200 font-bold uppercase text-[10px] tracking-widest">No activity data for this period</div>';
             } else {
                 keys.forEach(key => {
-                    const parts = key.split('|');
-                    const name = parts[0] || "Unknown";
-                    const role = parts[1] || "Staff";
-                    const fullName = getFullName(name);
+                    const stat = perfCounts[key];
                     
                     perfGrid.innerHTML += '<div class="perf-card shadow-sm bg-white border-l-4 border-blue-500">' +
-                        '<div class="flex-1 overflow-hidden pr-2" title="' + fullName + '">' +
-                            '<p class="text-[9px] font-black text-slate-500 uppercase truncate mb-0.5">' + fullName + '</p>' +
-                            '<p class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mb-2">' + role + '</p>' +
+                        '<div class="flex-1 overflow-hidden pr-2" title="' + stat.name + '">' +
+                            '<p class="text-[9px] font-black text-slate-500 uppercase truncate mb-0.5">' + stat.name + '</p>' +
+                            '<p class="text-[10px] font-bold text-blue-600 uppercase tracking-tighter mb-2">' + stat.role + '</p>' +
                             '<div class="flex flex-wrap gap-1.5">' +
-                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-blue-500">' + perfCounts[key].foot + '</span> FOOT</span>' +
-                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-purple-500">' + perfCounts[key].eye + '</span> EYE</span>' +
-                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-emerald-500">' + perfCounts[key].ref + '</span> REF</span>' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-blue-500">' + stat.foot + '</span> FOOT</span>' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-purple-500">' + stat.eye + '</span> EYE</span>' +
+                                '<span class="text-[8px] font-black text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded shadow-sm border border-slate-100"><span class="text-emerald-500">' + stat.ref + '</span> REF</span>' +
                             '</div>' +
                         '</div>' +
                         '<div class="text-right flex flex-col items-end justify-center border-l border-slate-100 pl-3 py-1">' +
-                            '<span class="text-2xl font-black text-slate-800 leading-none">' + perfCounts[key].total + '</span>' +
+                            '<span class="text-2xl font-black text-slate-800 leading-none">' + stat.total + '</span>' +
                             '<p class="text-[8px] text-slate-400 font-black uppercase mt-1">Total</p>' +
                         '</div>' +
                     '</div>';
@@ -563,12 +648,20 @@
                     allRecords = combined.sort((a,b) => b.id - a.id);
                     renderRecordsTable(allRecords);
                 }).getDashboardData();
+            } else {
+                 renderRecordsTable([]);
             }
         }
 
         function renderRecordsTable(data) {
             const tbody = document.getElementById('full-records-body');
             tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-slate-300 italic">No records found.</td></tr>';
+                 return;
+            }
+            
             data.forEach(d => {
                 const assessorName = getFullName(d.assessor);
                 tbody.innerHTML += '<tr class="hover:bg-slate-50 border-b border-slate-50" id="row-' + d.id + '">' +
@@ -600,7 +693,11 @@
                 google.script.run.withSuccessHandler(() => { 
                     allRecords = allRecords.filter(d => d.id !== id);
                     renderRecordsTable(allRecords);
+                    updateDashboard(); 
                 }).deleteRecordFromSheet(id);
+            } else {
+                 allRecords = allRecords.filter(d => d.id !== id);
+                 renderRecordsTable(allRecords);
             }
         }
 
