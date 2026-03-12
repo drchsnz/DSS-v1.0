@@ -26,7 +26,10 @@ function doGet(e) {
       
   } catch (error) {
     console.error("Routing error: " + error.toString());
-    return HtmlService.createHtmlOutput("<h2>Error 404: Module '" + page + ".html' not found.</h2><p>Please ensure the HTML file exists in the editor.</p>");
+    // CRITICAL FIX: Ensure the 404 error page ALSO has XFrameOptionsMode.ALLOWALL
+    // Otherwise, Google Drive blocks the 404 screen, resulting in "unable to open file".
+    return HtmlService.createHtmlOutput("<h2>Error 404: Module '" + page + ".html' not found.</h2><p>Please ensure the HTML file exists in the editor.</p>")
+        .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 }
 
@@ -322,10 +325,10 @@ function deleteRecordFromSheet(id) {
 }
 
 /**
- * 9. DATABASE READ FUNCTION (FETCH DASHBOARD DATA)
+ * 9. DATABASE READ FUNCTION (FETCH DASHBOARD DATA) - [UPDATED FOR ERROR HANDLING]
  */
 function getDashboardData() {
-  var result = { footData: [], eyeData: [], refData: [] };
+  var result = { footData: [], eyeData: [], refData: [], error: null };
   
   try {
     var ss = SpreadsheetApp.openById(DB_SHEET_ID);
@@ -334,30 +337,26 @@ function getDashboardData() {
     var footSheet = ss.getSheetByName('Sheet1');
     if (footSheet) {
       var data = footSheet.getDataRange().getValues();
-      // Start at index 1 assuming row 1 is headers
       for (var i = 1; i < data.length; i++) {
         var row = data[i];
-        if (!row[1] || isNaN(row[1])) continue; // Skip if no ID
+        if (!row[1] || row[1] === '') continue; // Skip if no ID
         
-        var dateVal = row[4]; // Date of visit column E
+        var dateVal = row[4]; 
         if (dateVal instanceof Date) {
           dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
         }
         
         var rawData = {};
-        try { if(row[59]) rawData = JSON.parse(row[59]); } catch(e) {} // JSON at column BH
+        try { if(row[59]) rawData = JSON.parse(row[59]); } catch(e) {} 
         
         result.footData.push({
-          id: row[1],
-          name: row[2],
-          ic: row[3],
-          date: dateVal,
-          risk: row[5], // Outcome Risk
-          assessor: row[56] || "Unknown",
-          designation: row[57] || "Healthcare Staff",
-          data: rawData
+          id: row[1], name: row[2], ic: row[3], date: dateVal,
+          risk: row[5], assessor: row[56] || "Unknown",
+          designation: row[57] || "Healthcare Staff", data: rawData
         });
       }
+    } else {
+        result.error = "Tab 'Sheet1' not found. Please ensure tabs are named Sheet1, Sheet2, Sheet3.";
     }
 
     // --- 9B. FETCH EYE DATA (Sheet2) ---
@@ -366,25 +365,20 @@ function getDashboardData() {
       var eyeRaw = eyeSheet.getDataRange().getValues();
       for (var j = 1; j < eyeRaw.length; j++) {
         var eRow = eyeRaw[j];
-        if (!eRow[1] || isNaN(eRow[1])) continue; 
+        if (!eRow[1] || eRow[1] === '') continue; 
         
-        var eDateVal = eRow[5]; // Date of Visit is Column F (index 5)
+        var eDateVal = eRow[5];
         if (eDateVal instanceof Date) {
           eDateVal = Utilities.formatDate(eDateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
         }
         
         var eRawData = {};
-        try { if(eRow[35]) eRawData = JSON.parse(eRow[35]); } catch(e) {} // JSON at column AJ
+        try { if(eRow[35]) eRawData = JSON.parse(eRow[35]); } catch(e) {} 
         
         result.eyeData.push({
-          id: eRow[1],
-          name: eRow[2],
-          ic: eRow[3],
-          date: eDateVal,
-          grade: eRow[34], // Outcome Grade is Column AI (index 34)
-          assessor: eRow[31] || "Unknown", // Screener Name is Column AF (index 31)
-          designation: eRow[32] || "Healthcare Staff",
-          data: eRawData
+          id: eRow[1], name: eRow[2], ic: eRow[3], date: eDateVal,
+          grade: eRow[34], assessor: eRow[31] || "Unknown", 
+          designation: eRow[32] || "Healthcare Staff", data: eRawData
         });
       }
     }
@@ -395,25 +389,20 @@ function getDashboardData() {
       var refRaw = refSheet.getDataRange().getValues();
       for (var k = 1; k < refRaw.length; k++) {
         var rRow = refRaw[k];
-        if (!rRow[1] || isNaN(rRow[1])) continue; 
+        if (!rRow[1] || rRow[1] === '') continue; 
         
-        var rDateVal = rRow[24]; // Referral Date is Column Y (index 24)
+        var rDateVal = rRow[24]; 
         if (rDateVal instanceof Date) {
           rDateVal = Utilities.formatDate(rDateVal, Session.getScriptTimeZone(), "yyyy-MM-dd");
         }
         
         var rRawData = {};
-        try { if(rRow[26]) rRawData = JSON.parse(rRow[26]); } catch(e) {} // JSON at column AA
+        try { if(rRow[26]) rRawData = JSON.parse(rRow[26]); } catch(e) {} 
         
         result.refData.push({
-          id: rRow[1],
-          name: rRow[2],
-          ic: rRow[3],
-          date: rDateVal,
-          outcome: rRow[25], // Outcome Status is Column Z (index 25)
-          assessor: rRow[21] || "Unknown", // Provider Name is Column V (index 21)
-          designation: rRow[22] || "Healthcare Staff",
-          data: rRawData
+          id: rRow[1], name: rRow[2], ic: rRow[3], date: rDateVal,
+          outcome: rRow[25], assessor: rRow[21] || "Unknown", 
+          designation: rRow[22] || "Healthcare Staff", data: rRawData
         });
       }
     }
@@ -421,6 +410,8 @@ function getDashboardData() {
     return result;
   } catch (error) { 
     console.error("Fetch error: " + error.toString());
+    // Attach error so frontend can see it!
+    result.error = "Google Drive Error: " + error.toString();
     return result; 
   }
 }
@@ -436,4 +427,19 @@ function getUserEmail() {
     email = Session.getEffectiveUser().getEmail();
   }
   return email || "Authorized User";
+}
+
+/**
+ * 11. FETCH HTML CONTENT DIRECTLY (SPA Fallback)
+ * Retrieves the raw HTML of a module to bypass Google Drive iframe restrictions.
+ * (Can be used if the iframe method continues to be blocked by network policy).
+ */
+function getModuleContent(page) {
+  try {
+    return HtmlService.createTemplateFromFile(page).evaluate().getContent();
+  } catch (error) {
+    return '<div style="padding: 2rem; text-align: center; color: #dc2626; font-family: sans-serif;">' +
+           '<h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem;">Error Loading Module</h2>' +
+           '<p>' + error.toString() + '</p></div>';
+  }
 }

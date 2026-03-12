@@ -71,14 +71,14 @@
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Username</label>
                         <div class="relative">
                             <i class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" id="login-user" placeholder="Enter username" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm">
+                            <input type="text" id="login-user" placeholder="Enter username (admin)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm">
                         </div>
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Password</label>
                         <div class="relative">
                             <i class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="password" id="login-pass" placeholder="Enter password" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm" onkeypress="if(event.key === 'Enter') validateLogin()">
+                            <input type="password" id="login-pass" placeholder="Enter password (admin123)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm" onkeypress="if(event.key === 'Enter') validateLogin()">
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                     </div>
                     <div class="stat-card border-b-4 border-slate-800">
                         <div class="flex justify-between items-start">
-                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</p><h3 id="stat-db-status" class="text-lg font-black text-green-600 mt-2 tracking-tighter uppercase">Cloud Linked</h3></div>
+                            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</p><h3 id="stat-db-status" class="text-lg font-black text-green-600 mt-2 tracking-tighter uppercase">Ready</h3></div>
                             <!-- Real-time Sync Pulse -->
                             <div id="sync-indicator" class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400"><i class="fas fa-cloud"></i></div>
                         </div>
@@ -244,7 +244,7 @@
                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Permanent Hospital Records</p>
                         </div>
                         <div class="flex gap-3">
-                            <button onclick="loadRecordsTable()" class="bg-slate-50 text-slate-600 border px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-100 transition"><i class="fas fa-database mr-2"></i>RELOAD CLOUD</button>
+                            <button onclick="loadRecordsTable()" class="bg-slate-50 text-slate-600 border px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-100 transition"><i class="fas fa-database mr-2"></i>RELOAD</button>
                             <button onclick="toggleModal('modal-new', true)" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-blue-700 transition"><i class="fas fa-plus mr-2"></i>NEW ASSESSMENT</button>
                         </div>
                     </div>
@@ -298,7 +298,6 @@
         const GAS_URL = "<?= url ?>"; 
         let globalData = { footData: [], eyeData: [], refData: [] };
 
-        // ADD FULL NAME MAPPING
         const ASSESSOR_NAMES = {
             "AZIMAN": "MUHAMMAD AZIMAN BIN AHMAD",
             "HASNIAH": "NOOR HASNIAH BINTI MUSA",
@@ -311,7 +310,6 @@
             return ASSESSOR_NAMES[shortName] || shortName || "Unknown";
         }
         
-        // NORMALIZER FOR DESIGNATION (Fixes "Assistante" typo and maps to uniform role)
         function normalizeRole(roleText) {
             const role = (roleText || '').toUpperCase();
             if (role.includes('ASSISTANT') || role.includes('ADE')) return 'Assistant DE (ADE)';
@@ -322,12 +320,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             initMonthFilter();
             
-            // Check if returning from a forced Google Logout redirect
             if (sessionStorage.getItem('local_admin_auth') === 'true') {
                 document.getElementById('sidebar-user-email').innerText = "admin (Local)";
-                enterSystem(); // Bypass login and load the app automatically
+                enterSystem(); 
             } else {
-                // Not returned from logout, attempt to get Google User Email
                 if (typeof google !== 'undefined' && google.script) {
                     google.script.run.withSuccessHandler(function(email) {
                         const e = email || "local_admin@hospital";
@@ -339,7 +335,6 @@
             document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         });
 
-        // FIXED TIMEZONE BUG: Calculate local year and month
         function initMonthFilter() {
             const filter = document.getElementById('perf-month-filter');
             const now = new Date();
@@ -353,7 +348,6 @@
             }
         }
 
-        // VALIDATE LOGIN CREDENTIALS
         function validateLogin() {
             const user = document.getElementById('login-user').value;
             const pass = document.getElementById('login-pass').value;
@@ -361,23 +355,18 @@
 
             if (user === 'admin' && pass === 'admin123') {
                 errorBox.classList.add('hidden');
-                
-                // 1. Set Session Storage so that when the app reloads, it skips the login screen
                 sessionStorage.setItem('local_admin_auth', 'true');
                 
-                // Show loading state to user
                 const btn = document.getElementById('btn-login');
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Securing Session...';
                 btn.disabled = true;
                 
-                // Enter the system directly without redirecting to Google
                 setTimeout(() => {
                     enterSystem();
                     btn.innerHTML = originalText;
                     btn.disabled = false;
-                }, 600); // Slight delay for visual feedback
-                
+                }, 600);
             } else {
                 errorBox.classList.remove('hidden');
             }
@@ -392,8 +381,6 @@
         function forceLogout() {
             if(confirm("Secure Logout: This will clear your session and redirect you to Google Account Switcher.")) {
                 sessionStorage.removeItem('local_admin_auth');
-                
-                // Use target="_top" anchor to bypass iframe restrictions
                 const redirectUrl = "https://accounts.google.com/";
                 const a = document.createElement('a');
                 a.target = '_top';
@@ -428,6 +415,10 @@
             }, 1000);
         }
 
+        // ==========================================
+        // MODULE ROUTING FIX 
+        // Maps short names to actual file names to prevent 404 Drive Errors
+        // ==========================================
         function loadModule(module) {
             document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
             if(document.getElementById('nav-'+module)) document.getElementById('nav-'+module).classList.add('active');
@@ -443,15 +434,43 @@
                 loadRecordsTable();
             } else {
                 document.getElementById('view-module').classList.remove('hidden');
-                if (module === 'foot') {
-                    document.getElementById('page-title').innerText = "Diabetic Foot Assessment";
-                    document.getElementById('module-frame').src = GAS_URL + "?page=foot_assessment";
-                } else if (module === 'eye') {
-                    document.getElementById('page-title').innerText = "Retinopathy Screening";
-                    document.getElementById('module-frame').src = GAS_URL + "?page=retinopathy_screening";
-                } else if (module === 'referral') {
-                    document.getElementById('page-title').innerText = "Referral Letter";
-                    document.getElementById('module-frame').src = GAS_URL + "?page=dr_referral";
+                
+                const isLocal = !GAS_URL || GAS_URL.includes('<?= url ?>') || GAS_URL === '';
+                
+                // MAPPING FIX: Translates short 'module' variables to EXACT .html filenames expected by Apps Script
+                const fileMap = { 'foot': 'foot_assessment', 'eye': 'retinopathy_screening', 'referral': 'dr_referral' };
+                const titleMap = { 'foot': 'Diabetic Foot Assessment', 'eye': 'Retinopathy Screening', 'referral': 'Referral Letter' };
+                
+                document.getElementById('page-title').innerText = titleMap[module];
+                
+                let targetPageName = fileMap[module];
+
+                if (isLocal) {
+                    // Local testing: Load files relatively (with .html extension)
+                    document.getElementById('module-frame').src = targetPageName + '.html';
+                } else {
+                    // Running in Google Apps Script Cloud Environment
+                    let iframeUrl = GAS_URL;
+                    
+                    try {
+                        const parentUrl = document.referrer || window.top.location.href;
+                        if (parentUrl && parentUrl.includes('/macros/s/')) {
+                            iframeUrl = parentUrl.split('?')[0]; 
+                            const urlParams = new URLSearchParams(parentUrl.split('?')[1] || '');
+                            let authString = '';
+                            if (urlParams.has('authuser')) authString += '&authuser=' + urlParams.get('authuser');
+                            if (urlParams.has('u')) authString += '&u=' + urlParams.get('u');
+                            
+                            // Send EXACT filename (targetPageName)
+                            document.getElementById('module-frame').src = iframeUrl + "?page=" + targetPageName + authString;
+                            return; 
+                        }
+                    } catch(e) {
+                        console.warn("Iframe URL routing fallback triggered.", e);
+                    }
+                    
+                    // Send EXACT filename (targetPageName)
+                    document.getElementById('module-frame').src = iframeUrl + "?page=" + targetPageName;
                 }
             }
         }
@@ -461,13 +480,16 @@
             if(isSyncing) {
                 ind.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i>';
                 ind.classList.add('text-blue-500', 'sync-pulse');
+                document.getElementById('stat-db-status').innerText = 'Syncing...';
+                document.getElementById('stat-db-status').classList.replace('text-green-600', 'text-blue-500');
             } else {
                 ind.innerHTML = '<i class="fas fa-cloud"></i>';
                 ind.classList.remove('text-blue-500', 'sync-pulse');
+                document.getElementById('stat-db-status').innerText = (typeof google !== 'undefined' && google.script) ? 'Cloud Linked' : 'Local Testing';
+                document.getElementById('stat-db-status').classList.replace('text-blue-500', 'text-green-600');
             }
         }
 
-        // Helper function for robust date comparison
         function isSameMonth(dateString, targetYYYYMM) {
             if(!dateString) return false;
             try {
@@ -479,18 +501,44 @@
             } catch(e) { return false; }
         }
 
+        // --- READ: UPDATE DASHBOARD ---
         function updateDashboard() {
             setSyncing(true);
+            
             if (typeof google !== 'undefined' && google.script) {
-                google.script.run.withSuccessHandler(data => {
+                google.script.run
+                .withSuccessHandler(data => {
+                    if (data.error) {
+                        alert("Database Connection Failed:\n\n" + data.error);
+                        console.error("Backend Error:", data.error);
+                    }
                     globalData = data;
                     setSyncing(false);
                     renderDashboardStats();
-                }).getDashboardData();
+                })
+                .withFailureHandler(err => {
+                    alert("Critical Script Error: Failed to contact Google Servers.\n" + err);
+                    setSyncing(false);
+                })
+                .getDashboardData();
             } else {
-                // If local testing, mock resolving the sync
-                setSyncing(false);
-                renderDashboardStats();
+                // FALLBACK: Load from LocalStorage (Mock Data for Canvas Preview)
+                let footData = JSON.parse(localStorage.getItem('dfa_patients_v1') || '[]');
+                let eyeData = JSON.parse(localStorage.getItem('dr_patients_v1') || '[]');
+                let refData = JSON.parse(localStorage.getItem('dr_referrals_v1') || '[]');
+                
+                // Inject fake data if empty so the preview looks nice
+                if(footData.length === 0) {
+                     footData = [{id: 1, name: "Ahmad Bin Ali", ic: "800101-11-2233", date: new Date().toISOString().split('T')[0], risk: "MODERATE", assessor: "AZIMAN", designation: "Diabetes Educator (DE)"}];
+                     eyeData = [{id: 2, name: "Siti Binti Kassim", ic: "920512-11-5544", date: new Date().toISOString().split('T')[0], grade: "Mild NPDR", assessor: "HASNIAH", designation: "Diabetes Educator (DE)"}];
+                }
+
+                globalData = { footData, eyeData, refData };
+                
+                setTimeout(() => {
+                    setSyncing(false);
+                    renderDashboardStats();
+                }, 500);
             }
         }
 
@@ -520,9 +568,11 @@
             const eyeData = globalData.eyeData || [];
             const refData = globalData.refData || [];
             
-            localStorage.setItem('dfa_patients_v1', JSON.stringify(footData));
-            localStorage.setItem('dr_patients_v1', JSON.stringify(eyeData));
-            localStorage.setItem('dr_referrals_v1', JSON.stringify(refData));
+            if(typeof google !== 'undefined' && google.script) {
+                localStorage.setItem('dfa_patients_v1', JSON.stringify(footData));
+                localStorage.setItem('dr_patients_v1', JSON.stringify(eyeData));
+                localStorage.setItem('dr_referrals_v1', JSON.stringify(refData));
+            }
             
             document.getElementById('stat-foot-total').innerText = footData.length;
             document.getElementById('stat-eye-total').innerText = eyeData.length;
@@ -531,42 +581,24 @@
             const targetMonth = document.getElementById('perf-month-filter').value;
             const perfCounts = {};
             
-            // --- FIX FOR SPLIT CARDS: Normalize the Name AND Role before grouping ---
-            // Tally Foot Screens
-            footData.forEach(d => {
-                if (isSameMonth(d.date, targetMonth)) {
-                    const role = normalizeRole(d.designation);
-                    const name = getFullName(d.assessor);
-                    const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
-                    perfCounts[key].total += 1;
-                    perfCounts[key].foot += 1;
-                }
-            });
-            
-            // Tally Eye Screens
-            eyeData.forEach(d => {
-                if (isSameMonth(d.date, targetMonth)) {
-                    const role = normalizeRole(d.designation);
-                    const name = getFullName(d.assessor);
-                    const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
-                    perfCounts[key].total += 1;
-                    perfCounts[key].eye += 1;
-                }
-            });
+            const tallyData = (data, type) => {
+                data.forEach(d => {
+                    if (isSameMonth(d.date, targetMonth)) {
+                        const role = normalizeRole(d.designation);
+                        const name = getFullName(d.assessor);
+                        const key = name + '|' + role;
+                        if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
+                        perfCounts[key].total += 1;
+                        if(type === 'foot') perfCounts[key].foot += 1;
+                        if(type === 'eye') perfCounts[key].eye += 1;
+                        if(type === 'ref') perfCounts[key].ref += 1;
+                    }
+                });
+            };
 
-            // Tally Referrals
-            refData.forEach(d => {
-                if (isSameMonth(d.date, targetMonth)) {
-                    const role = normalizeRole(d.designation);
-                    const name = getFullName(d.assessor);
-                    const key = name + '|' + role;
-                    if(!perfCounts[key]) perfCounts[key] = { name: name, role: role, total: 0, foot: 0, eye: 0, ref: 0 };
-                    perfCounts[key].total += 1;
-                    perfCounts[key].ref += 1;
-                }
-            });
+            tallyData(footData, 'foot');
+            tallyData(eyeData, 'eye');
+            tallyData(refData, 'ref');
 
             const perfGrid = document.getElementById('perf-grid');
             perfGrid.innerHTML = '';
@@ -577,7 +609,6 @@
             } else {
                 keys.forEach(key => {
                     const stat = perfCounts[key];
-                    
                     perfGrid.innerHTML += '<div class="perf-card shadow-sm bg-white border-l-4 border-blue-500">' +
                         '<div class="flex-1 overflow-hidden pr-2" title="' + stat.name + '">' +
                             '<p class="text-[9px] font-black text-slate-500 uppercase truncate mb-0.5">' + stat.name + '</p>' +
@@ -599,7 +630,6 @@
             const tbody = document.getElementById('combined-table-body');
             tbody.innerHTML = '';
             
-            // Combine all sets of data for the recent activity stream
             let combinedActivity = [
                 ...footData.map(d => Object.assign({}, d, { moduleType: 'FOOT', moduleBadgeClass: 'text-blue-600 bg-blue-50', rawModule: 'foot', outcomeVal: d.risk })),
                 ...eyeData.map(d => Object.assign({}, d, { moduleType: 'EYE', moduleBadgeClass: 'text-purple-600 bg-purple-50', rawModule: 'eye', outcomeVal: d.grade || d.risk || 'Done' })),
@@ -613,7 +643,6 @@
             } else {
                 sorted.forEach(d => {
                     const assessorName = getFullName(d.assessor);
-                    
                     tbody.innerHTML += '<tr class="hover:bg-slate-50 transition-colors">' +
                         '<td class="px-6 py-4 font-bold text-slate-700">' + d.name + '</td>' +
                         '<td class="px-6 py-4 text-slate-500 font-mono text-xs">' + d.ic + '</td>' +
@@ -627,28 +656,51 @@
         }
 
         let allRecords = [];
+
+        // --- READ: LOAD RECORDS TABLE ---
         function loadRecordsTable() {
             const tbody = document.getElementById('full-records-body');
             tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>Syncing cloud registry...</td></tr>';
+            
             if (typeof google !== 'undefined' && google.script) {
-                google.script.run.withSuccessHandler(data => {
+                google.script.run
+                .withSuccessHandler(data => {
+                    if (data.error) {
+                        alert("Database Connection Failed:\n\n" + data.error);
+                        tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-red-400"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i><br>Database Error</td></tr>';
+                    }
                     globalData = data;
-                    const footData = data.footData || [];
-                    const eyeData = data.eyeData || [];
-                    const refData = data.refData || [];
-                    
-                    let combined = [
-                        ...footData.map(d => Object.assign({}, d, { moduleType: 'FOOT', moduleBadgeClass: 'text-blue-600 bg-blue-50', rawModule: 'foot', outcomeVal: d.risk })),
-                        ...eyeData.map(d => Object.assign({}, d, { moduleType: 'EYE', moduleBadgeClass: 'text-purple-600 bg-purple-50', rawModule: 'eye', outcomeVal: d.grade || d.risk || 'Done' })),
-                        ...refData.map(d => Object.assign({}, d, { moduleType: 'REF', moduleBadgeClass: 'text-emerald-600 bg-emerald-50', rawModule: 'referral', outcomeVal: d.outcome || 'Generated' }))
-                    ];
-                    
-                    allRecords = combined.sort((a,b) => b.id - a.id);
-                    renderRecordsTable(allRecords);
-                }).getDashboardData();
+                    processAndRenderRecords(data);
+                })
+                .withFailureHandler(err => {
+                    alert("Critical Script Error: Failed to contact Google Servers.\n" + err);
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-red-400">Connection Error</td></tr>';
+                })
+                .getDashboardData();
             } else {
-                 renderRecordsTable([]);
+                // FALLBACK: Load from LocalStorage
+                const footData = JSON.parse(localStorage.getItem('dfa_patients_v1') || '[]');
+                const eyeData = JSON.parse(localStorage.getItem('dr_patients_v1') || '[]');
+                const refData = JSON.parse(localStorage.getItem('dr_referrals_v1') || '[]');
+                globalData = { footData, eyeData, refData };
+                
+                setTimeout(() => processAndRenderRecords(globalData), 500);
             }
+        }
+
+        function processAndRenderRecords(data) {
+            const footData = data.footData || [];
+            const eyeData = data.eyeData || [];
+            const refData = data.refData || [];
+            
+            let combined = [
+                ...footData.map(d => Object.assign({}, d, { moduleType: 'FOOT', moduleBadgeClass: 'text-blue-600 bg-blue-50', rawModule: 'foot', outcomeVal: d.risk })),
+                ...eyeData.map(d => Object.assign({}, d, { moduleType: 'EYE', moduleBadgeClass: 'text-purple-600 bg-purple-50', rawModule: 'eye', outcomeVal: d.grade || d.risk || 'Done' })),
+                ...refData.map(d => Object.assign({}, d, { moduleType: 'REF', moduleBadgeClass: 'text-emerald-600 bg-emerald-50', rawModule: 'referral', outcomeVal: d.outcome || 'Generated' }))
+            ];
+            
+            allRecords = combined.sort((a,b) => b.id - a.id);
+            renderRecordsTable(allRecords);
         }
 
         function renderRecordsTable(data) {
@@ -684,9 +736,10 @@
         }
 
         function deleteRecord(id, rawModule) {
-            if(!confirm("DANGER: This will permanently remove the record from the cloud. Proceed?")) return;
+            if(!confirm("DANGER: This will permanently remove the record. Proceed?")) return;
             const row = document.getElementById('row-' + id);
             if (row) row.style.opacity = '0.3';
+            
             if (typeof google !== 'undefined' && google.script) {
                 google.script.run.withSuccessHandler(() => { 
                     allRecords = allRecords.filter(d => d.id !== id);
@@ -694,8 +747,22 @@
                     updateDashboard(); 
                 }).deleteRecordFromSheet(id);
             } else {
-                 allRecords = allRecords.filter(d => d.id !== id);
-                 renderRecordsTable(allRecords);
+                // FALLBACK: Delete from LocalStorage for local testing
+                let storageKey = '';
+                if (rawModule === 'foot') storageKey = 'dfa_patients_v1';
+                else if (rawModule === 'eye') storageKey = 'dr_patients_v1';
+                else if (rawModule === 'referral') storageKey = 'dr_referrals_v1';
+                
+                if (storageKey) {
+                    let db = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    db = db.filter(r => r.id !== id);
+                    localStorage.setItem(storageKey, JSON.stringify(db));
+                }
+                
+                // Update local views
+                allRecords = allRecords.filter(d => d.id !== id);
+                renderRecordsTable(allRecords);
+                updateDashboard();
             }
         }
 
